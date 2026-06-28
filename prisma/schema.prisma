@@ -1,23 +1,59 @@
 // Remit persistence (Milestone 2). Mirrors src/domain/types.ts. Nested arrays are stored as JSON
 // to keep the first cut simple; promote to relations later if you need to query inside them.
 // COUNSEL: legal-reference fields are scaffolds; verify before production. Data residency: Australia.
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+generator client {
+  provider = "prisma-client-js"
+}
 
-enum Jurisdiction { VIC NSW QLD WA SA TAS ACT NT }
-enum RequestStatus { pending flagged approved modified refused }
-enum HazardType { psychosocial physical }
-enum HazardStatus { ontrack due reviewed }
-enum ContractStatus { ontrack review reviewed }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Jurisdiction {
+  VIC
+  NSW
+  QLD
+  WA
+  SA
+  TAS
+  ACT
+  NT
+}
+
+enum RequestStatus {
+  pending
+  flagged
+  approved
+  modified
+  refused
+}
+
+enum HazardType {
+  psychosocial
+  physical
+}
+
+enum HazardStatus {
+  ontrack
+  due
+  reviewed
+}
+
+enum ContractStatus {
+  ontrack
+  review
+  reviewed
+}
 
 model Organisation {
-  id            String   @id @default(cuid())
+  id            String            @id @default(cuid())
   name          String
   abn           String?
   industry      String?
   employeeBand  String?
   jurisdictions Jurisdiction[]
-  createdAt     DateTime @default(now())
+  createdAt     DateTime          @default(now())
   requests      WfhRequest[]
   hazards       Hazard[]
   contracts     OutcomeContract[]
@@ -41,6 +77,7 @@ model WfhRequest {
   decision           Json?         // Decision
   audit              Json          // AuditEvent[]
   createdAt          DateTime      @default(now())
+
   @@index([orgId, status])
 }
 
@@ -54,6 +91,7 @@ model PriorDecision {
   role         String?
   days         String?
   decidedOn    String?
+
   @@index([orgId, roleKey, jurisdiction])
 }
 
@@ -70,6 +108,7 @@ model Hazard {
   status       HazardStatus @default(ontrack)
   reviewDate   String
   audit        Json         // AuditEvent[]
+
   @@index([orgId, status])
 }
 
@@ -84,5 +123,6 @@ model OutcomeContract {
   signalSource String
   status       ContractStatus @default(ontrack)
   audit        Json           // AuditEvent[]
+
   @@index([orgId, status])
 }

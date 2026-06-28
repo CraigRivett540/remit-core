@@ -10,6 +10,7 @@ a **service layer**, a **REST API**, and a **CLI**, all fully typed and tested.
 ## Quickstart
 ```bash
 npm install
+npm run prisma:generate   # generate Prisma client (required for Prisma backend mode)
 npm run check     # strict typecheck + 25 Vitest tests
 npm run demo      # runs the full governance loop in your terminal
 npm start         # Remit API + web console on http://localhost:4000  (PORT=xxxx to change)
@@ -25,16 +26,24 @@ approving issues letter **EO-VIC-02** and feeds the decision back into the prior
 ```
 GET  /api/health
 GET  /api/jurisdictions
-GET  /api/requests                         POST /api/requests
+GET  /api/requests?limit=10&offset=0       POST /api/requests
 GET  /api/requests/:id
 POST /api/requests/:id/assessment          {factors:[...]}     -> runs consistency
 POST /api/requests/:id/distinguish         {factor:"..."}      -> unlocks refusal
 POST /api/requests/:id/decision            {type,ground}       -> 409 if guardrail blocks
 GET  /api/requests/:id/letter
-GET  /api/hazards    GET /api/hazards/:id/validation    POST /api/hazards/:id/review
-GET  /api/contracts                        POST /api/contracts/:id/review
+GET  /api/hazards?limit=10&offset=0        GET /api/hazards/:id/validation    POST /api/hazards/:id/review
+GET  /api/contracts?limit=10&offset=0      POST /api/contracts/:id/review
 ```
+Protected API routes (`/api/requests*`, `/api/hazards*`, `/api/contracts*`) require `x-org-id` header.
+List endpoints return a pagination envelope:
+`{ items: [...], page: { limit, offset, total, hasNext, hasPrev } }`.
 The consistency guardrail returns **HTTP 409** when you try to refuse/modify a flagged request.
+
+## Runtime backends
+- Default: in-memory store (`src/store/memory.ts`).
+- Prisma mode: set `REMIT_STORE_BACKEND=prisma` and `DATABASE_URL=postgres://...`.
+  On first run, Remit seeds the configured org (`REMIT_ORG_ID`, defaults to `org_brightwater`) into Prisma.
 
 ## Web console
 Open `http://localhost:4000` after `npm start` to use the live platform UI.
@@ -72,4 +81,3 @@ AGENTS.md      Warp/agent project rules + roadmap (read this)
 Illustrative scaffold, not legal advice — verify all legal references with Australian counsel before
 production. The Victorian WFH right is a Bill, not yet an Act. "Remit" is a working name pending
 trademark clearance. Data residency: Australia; APP-grade; no third-party data sharing.
-# remit-core

@@ -1,8 +1,14 @@
 const state = {
+  orgId: null,
   requests: [],
   hazards: [],
   contracts: [],
   selectedRequestId: null,
+  pagination: {
+    requests: { limit: 10, offset: 0, total: 0, hasNext: false, hasPrev: false },
+    hazards: { limit: 10, offset: 0, total: 0, hasNext: false, hasPrev: false },
+    contracts: { limit: 10, offset: 0, total: 0, hasNext: false, hasPrev: false },
+  },
 };
 
 const DEFAULT_FACTORS = [
@@ -19,6 +25,12 @@ const escapeHtml = (value) => String(value)
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#39;');
 
+const pagedSectionIds = {
+  requests: { prev: 'requests-prev', next: 'requests-next', label: 'requests-page' },
+  hazards: { prev: 'hazards-prev', next: 'hazards-next', label: 'hazards-page' },
+  contracts: { prev: 'contracts-prev', next: 'contracts-next', label: 'contracts-page' },
+};
+
 function log(message, payload) {
   const output = byId('activity-log');
   if (!output) return;
@@ -30,9 +42,13 @@ function log(message, payload) {
 }
 
 async function api(path, init = {}) {
+  const needsOrgHeader = /^\/api\/(requests|hazards|contracts)/.test(path);
+  const headers = { 'Content-Type': 'application/json', ...(init.headers ?? {}) };
+  if (needsOrgHeader && state.orgId) headers['x-org-id'] = state.orgId;
+
   const options = {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...init,
   };
   const response = await fetch(path, options);
@@ -42,6 +58,25 @@ async function api(path, init = {}) {
 }
 
 const asPill = (value) => `<span class="pill pill-${escapeHtml(value)}">${escapeHtml(value)}</span>`;
+
+function normalisePagedResponse(data) {
+  if (Array.isArray(data)) {
+    return {
+      items: data,
+      page: {
+        limit: data.length || 1,
+        offset: 0,
+        total: data.length,
+        hasNext: false,
+        hasPrev: false,
+      },
+    };
+  }
+  if (!data || typeof data !== 'object' || !Array.isArray(data.items) || !data.page) {
+    throw new Error('Unexpected paginated response format.');
+  }
+  return data;
+}
 
 function selectedRequest() {
   return state.requests.find((item) => item.id === state.selectedRequestId) ?? null;
@@ -54,6 +89,22 @@ function requireSelectedRequest() {
     return null;
   }
   return selected;
+}
+
+function renderPager(section) {
+  const ids = pagedSectionIds[section];
+  const page = state.pagination[section];
+  const prev = byId(ids.prev);
+  const next = byId(ids.next);
+  const label = byId(ids.label);
+
+  if (prev instanceof HTMLButtonElement) prev.disabled = !page.hasPrev;
+  if (next instanceof HTMLButtonElement) next.disabled = !page.hasNext;
+  if (label) {
+    const start = page.total === 0 ? 0 : page.offset + 1;
+    const end = Math.min(page.offset + page.limit, page.total);
+    label.textContent = `${start}-${end} of ${page.total}`;
+  }
 }
 
 function renderRequests() {
@@ -146,33 +197,51 @@ async function refreshStatus() {
     api('/api/health'),
     api('/api/jurisdictions'),
   ]);
+  state.orgId = health.orgId ?? state.orgId;
+
   const status = byId('health-status');
   const org = byId('health-org');
+  const orgId = byId('health-org-id');
+  const backend = byId('health-backend');
   const jurisdictionList = byId('jurisdictions');
   if (status) status.textContent = health.status;
   if (org) org.textContent = health.org;
+  if (orgId) orgId.textContent = health.orgId ?? '—';
+  if (backend) backend.textContent = health.backend ?? 'memory';
   if (jurisdictionList) {
     jurisdictionList.textContent = Object.values(jurisdictions).map((item) => item.code).join(', ');
   }
 }
 
 async function refreshRequests() {
-  state.requests = await api('/api/requests');
+  const page = state.pagination.requests;
+  const data = normalisePagedResponse(await api(`/api/requests?limit=${page.limit}&offset=${page.offset}`));
+  state.requests = data.items;
+  state.pagination.requests = { ...page, ...data.page };
   if (!state.requests.find((request) => request.id === state.selectedRequestId)) {
     state.selectedRequestId = state.requests[0]?.id ?? null;
   }
   renderRequests();
   renderSelectedRequest();
+  renderPager('requests');
 }
 
 async function refreshHazards() {
-  state.hazards = await api('/api/hazards');
+  const page = state.pagination.hazards;
+  const data = normalisePagedResponse(await api(`/api/hazards?limit=${page.limit}&offset=${page.offset}`));
+  state.hazards = data.items;
+  state.pagination.hazards = { ...page, ...data.page };
   renderHazards();
+  renderPager('hazards');
 }
 
 async function refreshContracts() {
-  state.contracts = await api('/api/contracts');
+  const page = state.pagination.contracts;
+  const data = normalisePagedResponse(await api(`/api/contracts?limit=${page.limit}&offset=${page.offset}`));
+  state.contracts = data.items;
+  state.pagination.contracts = { ...page, ...data.page };
   renderContracts();
+  renderPager('contracts');
 }
 
 function stampSync() {
@@ -182,8 +251,22 @@ function stampSync() {
 }
 
 async function refreshAll() {
-  await Promise.all([refreshStatus(), refreshRequests(), refreshHazards(), refreshContracts()]);
+  await refreshStatus();
+  await Promise.all([refreshRequests(), refreshHazards(), refreshContracts()]);
   stampSync();
+}
+
+async function changePage(section, direction) {
+  const page = state.pagination[section];
+  if (direction === 'next' && !page.hasNext) return;
+  if (direction === 'prev' && !page.hasPrev) return;
+  state.pagination[section].offset = direction === 'next'
+    ? page.offset + page.limit
+    : Math.max(0, page.offset - page.limit);
+
+  if (section === 'requests') await refreshRequests();
+  if (section === 'hazards') await refreshHazards();
+  if (section === 'contracts') await refreshContracts();
 }
 
 async function onCreateRequest(event) {
@@ -196,6 +279,7 @@ async function onCreateRequest(event) {
       method: 'POST',
       body: JSON.stringify(fields),
     });
+    state.pagination.requests.offset = 0;
     state.selectedRequestId = created.id;
     await refreshRequests();
     form.reset();
@@ -216,6 +300,7 @@ function onRequestSelection(event) {
   renderRequests();
   renderSelectedRequest();
 }
+
 async function onAssessRequest() {
   const request = requireSelectedRequest();
   if (!request) return;
@@ -358,6 +443,12 @@ async function init() {
   byId('load-letter')?.addEventListener('click', onLoadLetter);
   byId('hazards-body')?.addEventListener('click', onHazardAction);
   byId('contracts-body')?.addEventListener('click', onContractAction);
+  byId('requests-prev')?.addEventListener('click', async () => changePage('requests', 'prev'));
+  byId('requests-next')?.addEventListener('click', async () => changePage('requests', 'next'));
+  byId('hazards-prev')?.addEventListener('click', async () => changePage('hazards', 'prev'));
+  byId('hazards-next')?.addEventListener('click', async () => changePage('hazards', 'next'));
+  byId('contracts-prev')?.addEventListener('click', async () => changePage('contracts', 'prev'));
+  byId('contracts-next')?.addEventListener('click', async () => changePage('contracts', 'next'));
   byId('refresh-all')?.addEventListener('click', async () => {
     try {
       await refreshAll();
