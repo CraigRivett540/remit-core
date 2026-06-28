@@ -592,7 +592,7 @@
 
         <div class="rwstep on" id="rw1">
           <div class="ah-sub">Your organisation — Remit configures itself to your business and the law that applies to it.</div>
-          <div class="afield"><label>Registered business name</label><input id="au-org" placeholder="Brightwater Group Pty Ltd" value="Brightwater Group"></div>
+          <div class="afield"><label>Registered business name</label><input id="au-org" placeholder="Your organisation"></div>
           <div class="afield"><label>ABN</label><input id="au-abn" placeholder="00 000 000 000"></div>
           <div class="afield"><label>Industry</label><select id="au-ind"><option>Professional services</option><option>Financial services</option><option>Technology</option><option>Health &amp; community</option><option>Retail &amp; consumer</option><option>Construction &amp; property</option><option>Government</option><option>Other</option></select></div>
           <div class="afield"><label>Total employees</label><select id="au-size"><option>1–14 (small business)</option><option selected>15–49</option><option>50–199</option><option>200–999</option><option>1,000+</option></select></div>
@@ -602,7 +602,7 @@
 
         <div class="rwstep" id="rw2">
           <div class="ah-sub">Where your people work — each state runs its own rule profile, so this drives the engine.</div>
-          <div class="afield"><label>Jurisdictions your staff work in</label><div class="jchips" id="au-jchips"><button type="button" class="jchip on" onclick="tjc(this)">VIC</button><button type="button" class="jchip on" onclick="tjc(this)">NSW</button><button type="button" class="jchip on" onclick="tjc(this)">QLD</button><button type="button" class="jchip on" onclick="tjc(this)">WA</button><button type="button" class="jchip" onclick="tjc(this)">SA</button><button type="button" class="jchip" onclick="tjc(this)">TAS</button><button type="button" class="jchip" onclick="tjc(this)">ACT</button><button type="button" class="jchip" onclick="tjc(this)">NT</button></div></div>
+          <div class="afield"><label>Jurisdictions your staff work in</label><div class="jchips" id="au-jchips"><button type="button" class="jchip" onclick="tjc(this)">VIC</button><button type="button" class="jchip" onclick="tjc(this)">NSW</button><button type="button" class="jchip" onclick="tjc(this)">QLD</button><button type="button" class="jchip" onclick="tjc(this)">WA</button><button type="button" class="jchip" onclick="tjc(this)">SA</button><button type="button" class="jchip" onclick="tjc(this)">TAS</button><button type="button" class="jchip" onclick="tjc(this)">ACT</button><button type="button" class="jchip" onclick="tjc(this)">NT</button></div></div>
           <div class="afield"><label>Hybrid / remote staff</label><input id="au-remote" placeholder="e.g. 120"></div>
           <div class="afield"><label>Current WFH policy</label><select id="au-policy"><option>No formal policy</option><option>Informal / discretionary</option><option>Documented hybrid policy</option></select></div>
           <div class="rwnav two"><button class="btn ghost" onclick="regBack(2)">← Back</button><button class="btn" style="flex:1" onclick="regNext(2)">Continue →</button></div>
@@ -610,7 +610,7 @@
 
         <div class="rwstep" id="rw3">
           <div class="ah-sub">Administrator &amp; sign-in — the decision-owner who governs flexible work and signs off records.</div>
-          <div class="afield"><label>Administrator name</label><input id="au-name" placeholder="Alex Renn"></div>
+          <div class="afield"><label>Administrator name</label><input id="au-name" placeholder="Administrator name"></div>
           <div class="afield"><label>Role</label><select id="au-role"><option>General Counsel</option><option selected>Head of People</option><option>HR Manager</option><option>People &amp; Culture Lead</option><option>Founder / Director</option></select></div>
           <div class="afield"><label>Work email</label><input id="au-email" type="email" placeholder="you@company.com.au" autocomplete="off"></div>
           <div class="afield"><label>Password</label><input id="au-pass" type="password" placeholder="••••••••" autocomplete="off"></div>
@@ -630,18 +630,18 @@
 <div class="app" id="app" style="display:none">
   <aside class="side" id="side">
     <div class="logo" onclick="exitApp()" title="Back to landing"><div class="mark"></div><div class="name">Remit<span class="tm">®</span></div></div>
-    <div class="org"><div class="lab">Organisation</div><div class="nm">Brightwater Group</div><div class="ju">VIC 58 · NSW 31 · QLD 22 · WA 9</div></div>
+    <div class="org"><div class="lab">Organisation</div><div class="nm">Organisation</div><div class="ju">No request records yet</div></div>
     <nav class="nav" id="nav">
       <div class="sect">Govern</div>
       <button data-s="overview" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h8V3H3zM13 21h8V8h-8zM3 21h8v-6H3zM13 3v3h8V3z"/></svg>Overview</button>
-      <button data-s="requests"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8M21 12a9 9 0 11-6.2-8.5"/></svg>WFH Requests<span class="badge" id="nav-badge">4</span></button>
+      <button data-s="requests"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8M21 12a9 9 0 11-6.2-8.5"/></svg>WFH Requests<span class="badge" id="nav-badge" style="display:none">0</span></button>
       <button data-s="whs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Wellbeing &amp; WHS</button>
       <button data-s="outcomes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Outcomes</button>
       <div class="sect">Reference</div>
       <button data-s="compliance"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M9 13h6M9 17h6"/></svg>Compliance Register</button>
       <button data-s="settings"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 2h-5l-.4 2.6a7 7 0 00-1.7 1l-2.3-1-2 3.4L5.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1L9.5 22h5l.4-2.6a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg>Settings</button>
     </nav>
-    <div class="side-foot"><div class="u"><div class="av">AR</div><div><div class="un">Alex Renn</div><div class="ur">Head of People &amp; Legal</div></div></div></div>
+    <div class="side-foot"><div class="u"><div class="av">RM</div><div><div class="un">Workspace admin</div><div class="ur">Organisation admin</div></div></div></div>
   </aside>
 
   <div class="main">
@@ -658,14 +658,14 @@
       <section class="screen active" id="screen-overview">
         <div class="commence">
           <div class="big" id="countdown">66<small>days</small></div>
-          <div class="txt"><div class="tag">Forcing event · Victoria</div><div class="t1">Right to work from home commences 1 September 2026</div><div class="t2">58 Victorian staff move from policy-based hybrid to a statutory right. Remit's VIC jurisdiction profile is staged and ready; refusal grounds and EO-VIC letter templates are loaded.</div></div>
+          <div class="txt"><div class="tag">Forcing event · Victoria</div><div class="t1">Right to work from home commences 1 September 2026</div><div class="t2">Use this console as a blank governance template: add requests, hazards, and outcome contracts as your records are created.</div></div>
         </div>
         <div class="stats">
-          <div class="stat"><div class="n" id="ov-open">4</div><div class="l">WFH requests open</div><div class="meta" id="ov-open-m">2 awaiting decision</div></div>
-          <div class="stat flag"><div class="n" id="ov-flag">1</div><div class="l">Decisions flagged</div><div class="meta">Consistency risk</div></div>
-          <div class="stat"><div class="n">3</div><div class="l">Open hazards</div><div class="meta">1 review due</div></div>
-          <div class="stat"><div class="n">28</div><div class="l">Outcome contracts</div><div class="meta">All on track</div></div>
-          <div class="stat"><div class="n">96%</div><div class="l">Right-to-disconnect</div><div class="meta">Team adherence</div></div>
+          <div class="stat"><div class="n" id="ov-open">0</div><div class="l">WFH requests open</div><div class="meta" id="ov-open-m">0 awaiting assessment</div></div>
+          <div class="stat flag"><div class="n" id="ov-flag">0</div><div class="l">Decisions flagged</div><div class="meta">Consistency risk</div></div>
+          <div class="stat"><div class="n">0</div><div class="l">Open hazards</div><div class="meta">0 review due</div></div>
+          <div class="stat"><div class="n">0</div><div class="l">Outcome contracts</div><div class="meta">No contracts yet</div></div>
+          <div class="stat"><div class="n">—</div><div class="l">Right-to-disconnect</div><div class="meta">No data yet</div></div>
         </div>
         <div class="grid mt24" style="grid-template-columns:1fr 360px">
           <div class="card pad">
@@ -674,11 +674,8 @@
           </div>
           <div class="card pad">
             <div class="eyebrow">Workforce</div><div class="h2">By jurisdiction</div>
-            <div class="mt16">
-              <div class="jbar"><span class="jn">VIC</span><div class="track"><div class="fill" style="width:90%"></div></div><span class="jv">58</span></div>
-              <div class="jbar"><span class="jn">NSW</span><div class="track"><div class="fill" style="width:48%"></div></div><span class="jv">31</span></div>
-              <div class="jbar"><span class="jn">QLD</span><div class="track"><div class="fill" style="width:34%"></div></div><span class="jv">22</span></div>
-              <div class="jbar"><span class="jn">WA</span><div class="track"><div class="fill" style="width:14%"></div></div><span class="jv">9</span></div>
+            <div class="mt16" id="jur-bars">
+              <div class="ctrlnote">No jurisdiction data yet. It will populate as requests are added.</div>
             </div>
             <div class="disclaim">Each jurisdiction runs its own rule profile — WFH framework, WHS scheme and surveillance regime differ by state.</div>
           </div>
@@ -726,11 +723,10 @@
           </div>
           <div class="twocol mt16">
             <div class="card pad"><div class="eyebrow">Aggregate · consent-based</div><div class="h2">After-hours activity index</div><div class="sub">Team-level trend only. No individual is ever named or scored.</div>
-              <div class="minibar mt16"><div class="b" style="height:50%"><span>Mar</span></div><div class="b" style="height:62%"><span>Apr</span></div><div class="b hi" style="height:78%"><span>May</span></div><div class="b" style="height:44%"><span>Jun</span></div></div>
-              <div class="legend">May spike triggered the Q3 workload hazard control. Index falling since.</div>
+              <div class="ctrlnote mt16">No trend data yet. Trends appear after consent-based signals are connected and reviewed.</div>
             </div>
             <div class="card pad"><div class="eyebrow">Pulse · team trend</div><div class="h2">Connection &amp; load</div>
-              <div class="mt16"><div class="kv"><span class="k">Connection score (team avg)</span><span class="v">7.2 / 10 ▲ 0.3</span></div><div class="kv"><span class="k">Workload sustainability</span><span class="v">6.8 / 10 ▲ 0.5</span></div><div class="kv"><span class="k">Right-to-disconnect adherence</span><span class="v">96%</span></div><div class="kv"><span class="k">Home WHS assessments complete</span><span class="v">112 / 120</span></div></div>
+              <div class="mt16"><div class="kv"><span class="k">Connection score (team avg)</span><span class="v">—</span></div><div class="kv"><span class="k">Workload sustainability</span><span class="v">—</span></div><div class="kv"><span class="k">Right-to-disconnect adherence</span><span class="v">—</span></div><div class="kv"><span class="k">Home WHS assessments complete</span><span class="v">0 / 0</span></div></div>
               <div class="ctrlnote">Pulse instruments report at team level. Individual responses are never exposed to managers.</div>
             </div>
           </div>
@@ -795,7 +791,7 @@
         <div class="eyebrow">Configuration</div><div class="h2">Settings</div><div class="sub">Organisation profile, integrations and data posture.</div>
         <div class="twocol mt16">
           <div class="card pad"><div class="eyebrow">Integrations</div><div class="h2">Connected systems</div>
-            <div class="mt16"><div class="kv"><span class="k">Employment Hero (HRIS)</span><span class="v" style="color:var(--green)">● Connected</span></div><div class="kv"><span class="k">Jira / Asana (delivery signals)</span><span class="v" style="color:var(--green)">● Connected</span></div><div class="kv"><span class="k">CRM (outcome signals)</span><span class="v" style="color:var(--green)">● Connected</span></div><div class="kv"><span class="k">Calendar metadata (boundary signals)</span><span class="v" style="color:var(--ink-faint)">○ Aggregate only</span></div></div>
+            <div class="mt16"><div class="kv"><span class="k">Employment Hero (HRIS)</span><span class="v" style="color:var(--ink-faint)">○ Not connected</span></div><div class="kv"><span class="k">Jira / Asana (delivery signals)</span><span class="v" style="color:var(--ink-faint)">○ Not connected</span></div><div class="kv"><span class="k">CRM (outcome signals)</span><span class="v" style="color:var(--ink-faint)">○ Not connected</span></div><div class="kv"><span class="k">Calendar metadata (boundary signals)</span><span class="v" style="color:var(--ink-faint)">○ Not connected</span></div></div>
             <div class="ctrlnote">Remit reads role and employment data from your HRIS, and delivery state from your tools. It does not capture content, keystrokes or screenshots.</div>
           </div>
           <div class="card pad"><div class="eyebrow">Data posture</div><div class="h2">Privacy by design</div>
@@ -813,13 +809,13 @@
   <div class="modal" role="dialog" aria-modal="true" aria-label="New work-from-home request">
     <div class="mh"><h3>New work-from-home request</h3><button class="x" onclick="closeNew()" aria-label="Close">×</button></div>
     <div class="mb">
-      <div class="field"><label>Employee name</label><input id="nf-name" placeholder="e.g. Jordan Wells"></div>
-      <div class="field"><label>Role</label><input id="nf-role" placeholder="e.g. Account Manager · Client Advisory"></div>
+      <div class="field"><label>Employee name</label><input id="nf-name" placeholder="Employee full name"></div>
+      <div class="field"><label>Role</label><input id="nf-role" placeholder="Role title"></div>
       <div class="row" style="gap:12px">
         <div class="field" style="flex:1"><label>Jurisdiction</label><select id="nf-jur"><option>VIC</option><option>NSW</option><option>QLD</option><option>WA</option></select></div>
         <div class="field" style="flex:1"><label>Days / week</label><select id="nf-days"><option>1 day</option><option selected>2 days</option><option>3 days</option></select></div>
       </div>
-      <div class="field"><label>Proposed pattern</label><input id="nf-pat" placeholder="e.g. Mon & Tue"></div>
+      <div class="field"><label>Proposed pattern</label><input id="nf-pat" placeholder="Proposed pattern"></div>
     </div>
     <div class="mf"><button class="btn ghost" onclick="closeNew()">Cancel</button><button class="btn" onclick="submitNew()">Create request</button></div>
   </div>

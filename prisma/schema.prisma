@@ -1,6 +1,11 @@
-// Remit persistence (Milestone 2). Mirrors src/domain/types.ts. Nested arrays are stored as JSON
-// to keep the first cut simple; promote to relations later if you need to query inside them.
-// COUNSEL: legal-reference fields are scaffolds; verify before production. Data residency: Australia.
+// Remit CRM — data-entry persistence model
+// Stack: PostgreSQL via Prisma. Swap `provider = "sqlite"` for the pilot.
+// Principle: store the ENTERED facts and INGESTED signals only.
+// Every "derived" surface in the prototype (consistency flag, letter,
+// after-hours index, delivery status, dashboard stats) is computed at read
+// time or written by an engine — never hand-entered.
+// Audit is append-only. Decision/hazard/contract records are immutable once finalised.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +13,128 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 0 · ORG & CONFIGURATION  (admin entry, mostly one-time)
+// ─────────────────────────────────────────────────────────────
+
+model Org {
+  id            String        @id @default(cuid())
+  name          String
+  abn           String?
+  dataResidency String        @default("AU")
+  retentionYrs  Int           @default(7)
+  createdAt     DateTime      @default(now())
+  jurisdictions OrgJurisdiction[]
+  users         User[]
+  employees     Employee[]
+  letterTemplates LetterTemplate[]
+  integrations  Integration[]
+}
+
+// Which states this org operates in + headcount (drives Overview "by jurisdiction")
+model OrgJurisdiction {
+  id        String   @id @default(cuid())
+  org       Org      @relation(fields: [orgId], references: [id])
+  orgId     String
+  code      Jurisdiction
+  headcount Int      @default(0)
+  ruleProfileId String?            // FK to seeded ComplianceProfile
+  @@unique([orgId, code])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  org       Org      @relation(fields: [orgId], references: [id])
+  orgId     String
+  name      String
+  email     String   @unique
+  role      UserRole                // segregation of duties matters legally
+  isHsr     Boolean  @default(false) // Health & Safety Rep — for consultation records
+  createdAt DateTime @default(now())
+  assessmentsDone   WfhAssessment[]
+  decisionsMade     WfhDecision[]
+  reviewsLogged     ControlReview[]
+}
+
+enum UserRole {
+  ADMIN          // config, templates, integrations
+  ASSESSOR       // completes role-suitability + WHS assessments
+  DECISION_MAKER // makes/issues WFH decisions (must differ from assessor for clean trail)
+  WHS_LEAD       // owns hazard register
+  MANAGER        // co-sets outcome contracts, runs cycle reviews
+  VIEWER         // read-only (e.g. General Counsel)
+}
+
+// Counsel-approved decision letters, per jurisdiction × decision type. Editable by ADMIN.
+model LetterTemplate {
+  id          String   @id @default(cuid())
+  org         Org      @relation(fields: [orgId], references: [id])
+  orgId       String
+  code        String   // e.g. "EO-VIC-02", "FW-NSW-02"
+  jurisdiction Jurisdiction
+  decisionType DecisionType
+  bodyMd      String   // merge-field template: {{employee.name}}, {{decision.ground}} ...
+  counselApprovedBy String?
+  counselApprovedAt DateTime?
+  active      Boolean  @default(true)
+  @@unique([orgId, code])
+}
+
+model Integration {
+  id        String   @id @default(cuid())
+  org       Org      @relation(fields: [orgId], references: [id])
+  orgId     String
+  kind      IntegrationKind
+  config    Json     // credentials ref / workspace ids — NEVER raw secrets in app DB
+  status    String   @default("connected")
+  @@unique([orgId, kind])
+}
+
+enum IntegrationKind {
+  HRIS          // Employment Hero — role & employment data
+  JIRA
+  ASANA
+  CRM
+  TICKETS
+  CALENDAR_META // consented metadata, aggregate only
+}
+
+// Seeded reference data (compliance register). Org-agnostic; maintained centrally.
+model ComplianceProfile {
+  id           String   @id @default(cuid())
+  jurisdiction Jurisdiction @unique
+  wfhInstrument  String
+  whsInstrument  String
+  surveilInstrument String
+  harmonisation  String   // "Model WHS" | "Model WHS+" | "Non-harmonised"
+  reformWatch    Json     // [{date, note}]
+  compiledTo     DateTime
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1 · WORKFORCE MASTER  (HRIS import OR manual entry)
+// ─────────────────────────────────────────────────────────────
+
+model Employee {
+  id          String   @id @default(cuid())
+  org         Org      @relation(fields: [orgId], references: [id])
+  orgId       String
+  externalId  String?  // HRIS id for sync
+  name        String
+  initials    String?
+  role        String
+  roleKey     String   // normalised role for comparator matching (e.g. "account manager")
+  jurisdiction Jurisdiction
+  homeLocation String?
+  employmentBasis String? // permanent / fixed-term / casual
+  team        String?
+  managerId   String?
+  active      Boolean  @default(true)
+  wfhRequests WfhRequest[]
+  outcomeContracts OutcomeContract[]
+  whsSelfAssessments WhsSelfAssessment[]
 }
 
 enum Jurisdiction {
@@ -21,108 +148,307 @@ enum Jurisdiction {
   NT
 }
 
+// ─────────────────────────────────────────────────────────────
+// 2 · STREAM 01 · WFH GOVERNANCE
+// ─────────────────────────────────────────────────────────────
+
+model WfhRequest {
+  id          String   @id   // human ref e.g. "WFH-2026-0142"
+  org         String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  String
+  jurisdiction Jurisdiction
+  requestedDays  String      // "2 days"
+  pattern     String         // "Mon & Tue"
+  wfhLocation String         // "Home (Carlton, VIC)"
+  requestedStart DateTime?
+  submittedAt DateTime @default(now())
+  status      RequestStatus @default(PENDING) // derived from assessment+decision state
+  // framework strings are DERIVED from jurisdiction at read time, not stored
+  assessment  WfhAssessment?
+  decision    WfhDecision?
+  letter      DecisionLetter?
+  consistency ConsistencyResult?
+  audit       AuditEntry[]
+}
+
 enum RequestStatus {
-  pending
-  flagged
-  approved
-  modified
-  refused
+  PENDING
+  FLAGGED
+  APPROVED
+  MODIFIED
+  REFUSED
+}
+
+// ENTRY: assessor fills one row per dimension. RAG + note are entered.
+model WfhAssessment {
+  id          String   @id @default(cuid())
+  request     WfhRequest @relation(fields: [requestId], references: [id])
+  requestId   String   @unique
+  assessedBy  User     @relation(fields: [assessorId], references: [id])
+  assessorId  String
+  completedAt DateTime?
+  dimensions  AssessmentDimension[]
+}
+
+model AssessmentDimension {
+  id          String   @id @default(cuid())
+  assessment  WfhAssessment @relation(fields: [assessmentId], references: [id])
+  assessmentId String
+  dimension   String   // "Client / customer in-person interaction" ...
+  finding     String   // entered note
+  rag         Rag      // entered: GREEN / AMBER / RED
+}
+
+enum Rag {
+  GREEN
+  AMBER
+  RED
+}
+
+// ENTRY: completed by worker (or assessor) — also feeds Stream 02 ergonomic hazard
+model WhsSelfAssessment {
+  id          String   @id @default(cuid())
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  String
+  completedAt DateTime?
+  result      String   // "Pass" | "Flag"
+  remediation String?
+  equipmentIssued Boolean @default(false)
+}
+
+// DERIVED by the consistency engine — written, not entered.
+model ConsistencyResult {
+  id          String   @id @default(cuid())
+  request     WfhRequest @relation(fields: [requestId], references: [id])
+  requestId   String   @unique
+  state       String   // "clear" | "flag" | "pending"
+  comparatorRequestId String?
+  note        String?
+  distinguishingFactor String? // ENTERED only when overriding a flag before refusal
+  distinguishedBy String?
+  distinguishedAt DateTime?
+}
+
+// ENTRY: decision-maker selects ground (controlled vocab) + type + rationale.
+model WfhDecision {
+  id          String   @id @default(cuid())
+  request     WfhRequest @relation(fields: [requestId], references: [id])
+  requestId   String   @unique
+  decidedBy   User     @relation(fields: [deciderId], references: [id])
+  deciderId   String
+  type        DecisionType
+  groundCode  String?  // FK-ish to controlled RefusalGround vocab
+  rationale   String
+  alternativeOffer String?
+  reviewableAt DateTime?
+  decidedAt   DateTime @default(now())
+  finalised   Boolean  @default(false) // once true → immutable
+}
+
+enum DecisionType {
+  APPROVED
+  MODIFIED
+  REFUSED
+}
+
+// Controlled vocabulary — admin-seeded, no free-text legal exposure.
+model RefusalGround {
+  code   String @id  // "INHERENT_REQUIREMENTS" ...
+  label  String
+  active Boolean @default(true)
+}
+
+// DERIVED: assembled from LetterTemplate + merge fields. Generated, not entered.
+model DecisionLetter {
+  id          String   @id @default(cuid())
+  request     WfhRequest @relation(fields: [requestId], references: [id])
+  requestId   String   @unique
+  templateCode String
+  renderedMd  String
+  issued      Boolean  @default(false)
+  issuedAt    DateTime?
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3 · STREAM 02 · WELLBEING & WHS
+// ─────────────────────────────────────────────────────────────
+
+model Hazard {
+  id          String   @id   // "HZ-019"
+  org         String
+  name        String
+  type        HazardType
+  jurisdiction Jurisdiction   // or "All"
+  status      HazardStatus @default(ONTRACK)
+  identification String       // ENTERED: how it was identified
+  riskAssessment String       // ENTERED: aggregate risk note
+  frameworkInstrument String  // ENTERED/selected
+  frameworkCode String?
+  frameworkNote String?
+  reviewDate  DateTime
+  controls    HazardControl[]
+  consultation Consultation[]
+  reviews     ControlReview[]
+  triggers    ReviewTrigger[]
+  audit       AuditEntry[]
 }
 
 enum HazardType {
-  psychosocial
-  physical
+  PSYCHOSOCIAL
+  PHYSICAL
 }
-
 enum HazardStatus {
-  ontrack
-  due
-  reviewed
+  ONTRACK
+  DUE
+  REVIEWED
 }
 
-enum ContractStatus {
-  ontrack
-  review
-  reviewed
+// ENTRY: each control = hierarchy level + description. Higher-order first enforced in UI.
+model HazardControl {
+  id        String   @id @default(cuid())
+  hazard    Hazard   @relation(fields: [hazardId], references: [id])
+  hazardId  String
+  tier      ControlTier   // HIGHER_ORDER / LOWER_ORDER
+  description String
+  applied   Boolean  @default(false)
+  appliedAt DateTime?
 }
 
-model Organisation {
-  id            String            @id @default(cuid())
-  name          String
-  abn           String?
-  industry      String?
-  employeeBand  String?
-  jurisdictions Jurisdiction[]
-  createdAt     DateTime          @default(now())
-  requests      WfhRequest[]
-  hazards       Hazard[]
-  contracts     OutcomeContract[]
-  priors        PriorDecision[]
+enum ControlTier {
+  HIGHER_ORDER
+  LOWER_ORDER
 }
 
-model WfhRequest {
-  id                 String        @id
-  org                Organisation  @relation(fields: [orgId], references: [id])
-  orgId              String
-  employee           String
-  role               String
-  roleKey            String
-  jurisdiction       Jurisdiction
-  days               String
-  pattern            String
-  assessment         Json          // AssessmentFactor[]
-  assessmentComplete Boolean       @default(false)
-  status             RequestStatus @default(pending)
-  consistency        Json          // ConsistencyResult
-  decision           Json?         // Decision
-  audit              Json          // AuditEvent[]
-  createdAt          DateTime      @default(now())
-
-  @@index([orgId, status])
+// ENTRY: who was consulted, when, views, outcome.
+model Consultation {
+  id        String   @id @default(cuid())
+  hazard    Hazard   @relation(fields: [hazardId], references: [id])
+  hazardId  String
+  hsrName   String?
+  workersConsulted Boolean @default(false)
+  views     String
+  consultedAt DateTime @default(now())
 }
 
-model PriorDecision {
-  id           String        @id
-  org          Organisation  @relation(fields: [orgId], references: [id])
-  orgId        String
-  roleKey      String
-  jurisdiction Jurisdiction
-  status       RequestStatus
-  role         String?
-  days         String?
-  decidedOn    String?
-
-  @@index([orgId, roleKey, jurisdiction])
+model ReviewTrigger {
+  id        String   @id @default(cuid())
+  hazard    Hazard   @relation(fields: [hazardId], references: [id])
+  hazardId  String
+  label     String   // "Scheduled — 12 Aug 2026" / "On HSR request" ...
 }
 
-model Hazard {
-  id           String       @id
-  org          Organisation @relation(fields: [orgId], references: [id])
-  orgId        String
-  name         String
-  type         HazardType
-  jurisdiction Jurisdiction
-  controls     Json         // Control[]
-  consultation String
-  triggers     Json         // string[]
-  status       HazardStatus @default(ontrack)
-  reviewDate   String
-  audit        Json         // AuditEvent[]
-
-  @@index([orgId, status])
+// ENTRY: a review EVENT appends to the control log + audit.
+model ControlReview {
+  id        String   @id @default(cuid())
+  hazard    Hazard   @relation(fields: [hazardId], references: [id])
+  hazardId  String
+  reviewedBy User    @relation(fields: [reviewerId], references: [id])
+  reviewerId String
+  finding   String
+  reviewedAt DateTime @default(now())
 }
+
+// INGESTED + aggregated. Stored ONLY at team level. No individual rows surface.
+model SignalAggregate {
+  id        String   @id @default(cuid())
+  org       String
+  team      String?
+  metric    SignalMetric
+  period    String   // "2026-05"
+  value     Float
+  source    IntegrationKind
+}
+
+enum SignalMetric {
+  AFTER_HOURS_INDEX
+  CONNECTION_SCORE
+  WORKLOAD_SUSTAINABILITY
+  RIGHT_TO_DISCONNECT_ADHERENCE
+  WHS_ASSESSMENT_COMPLETION
+}
+
+// Individual pulse responses ARE entered by workers but are write-only to aggregate.
+// They must never be readable per-individual by managers (enforce in API, not just UI).
+model PulseResponse {
+  id        String   @id @default(cuid())
+  employeeId String  // pseudonymised at rest if required
+  metric    SignalMetric
+  value     Int
+  submittedAt DateTime @default(now())
+  // NO manager-readable relation. Aggregation job rolls these into SignalAggregate.
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4 · STREAM 03 · OUTCOME CONTRACTS
+// ─────────────────────────────────────────────────────────────
 
 model OutcomeContract {
-  id           String         @id
-  org          Organisation   @relation(fields: [orgId], references: [id])
-  orgId        String
-  employee     String
+  id          String   @id   // "OC-2026-Q3-014"
+  org         String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  employeeId  String
   jurisdiction Jurisdiction
-  period       String
-  outcomes     Json           // Outcome[]
-  signalSource String
-  status       ContractStatus @default(ontrack)
-  audit        Json           // AuditEvent[]
+  period      String          // "Q3 2026"
+  signalSource IntegrationKind
+  status      OutcomeStatus @default(ONTRACK) // derived from outcome states / review
+  coSetAt     DateTime?       // ENTRY: agreement timestamp (both-sided)
+  employeeAcknowledged Boolean @default(false) // ENTRY: employee sign-off
+  outcomes    OutcomeItem[]
+  reviews     CycleReview[]
+  audit       AuditEntry[]
+}
 
-  @@index([orgId, status])
+enum OutcomeStatus {
+  ONTRACK
+  REVIEW
+  REVIEWED
+}
+
+// ENTRY at co-set: description. Status is INGESTED from the signal source.
+model OutcomeItem {
+  id        String   @id @default(cuid())
+  contract  OutcomeContract @relation(fields: [contractId], references: [id])
+  contractId String
+  description String
+  status    OutcomeItemStatus @default(NOTSTARTED) // updated by signal ingestion
+  externalRef String? // Jira key / Asana gid / CRM id for signal mapping
+}
+
+enum OutcomeItemStatus {
+  DONE
+  PROGRESS
+  NOTSTARTED
+}
+
+// ENTRY: cycle review event — reviewer + summary + sign-off.
+model CycleReview {
+  id        String   @id @default(cuid())
+  contract  OutcomeContract @relation(fields: [contractId], references: [id])
+  contractId String
+  reviewerName String
+  summary   String
+  signedOff Boolean  @default(false)
+  reviewedAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────
+// CROSS-CUTTING · AUDIT  (append-only, system-written, never entered)
+// ─────────────────────────────────────────────────────────────
+
+model AuditEntry {
+  id        String   @id @default(cuid())
+  org       String
+  at        DateTime @default(now())
+  actor     String?  // user id or "system"
+  event     String   // human-readable rail line
+  locked    Boolean  @default(false) // pending vs recorded (the "1" flag in seed rails)
+  // polymorphic anchors — one will be set
+  requestId String?
+  request   WfhRequest? @relation(fields: [requestId], references: [id])
+  hazardId  String?
+  hazard    Hazard? @relation(fields: [hazardId], references: [id])
+  contractId String?
+  contract  OutcomeContract? @relation(fields: [contractId], references: [id])
+  @@index([org, at])
 }
