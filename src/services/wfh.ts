@@ -1,5 +1,12 @@
 import type { Store } from '../store/memory.js';
-import type { WfhRequest, AssessmentFactor, DecisionType, Jurisdiction } from '../domain/types.js';
+import type {
+  WfhRequest,
+  AssessmentFactor,
+  DecisionType,
+  Jurisdiction,
+  StaffEntry,
+  StaffRecordType,
+} from '../domain/types.js';
 import { completeAssessment, decide, canDecide } from '../domain/decisions.js';
 import { resolveByDistinguishing, resolveByAlignment } from '../domain/consistency.js';
 import { renderDecisionLetter } from '../domain/letters.js';
@@ -17,15 +24,36 @@ export function get(store: Store, id: string): WfhRequest {
   return r;
 }
 export function list(store: Store): WfhRequest[] { return store.requests; }
+function optionalText(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
+}
 
-export interface NewRequest { employee: string; role: string; jurisdiction: Jurisdiction; days: string; pattern: string; }
+export interface NewRequest {
+  employee: string;
+  role: string;
+  jurisdiction: Jurisdiction;
+  days: string;
+  pattern: string;
+  staffRecordType?: StaffRecordType;
+  previousArrangement?: string;
+  previousArrangementSince?: string;
+  previousArrangementNotes?: string;
+}
 export function create(store: Store, input: NewRequest, now = new Date()): WfhRequest {
   store.seq += 1;
   const id = `WFH-2026-${String(store.seq).padStart(4, '0')}`;
+  const staffEntry: StaffEntry = {
+    staffRecordType: input.staffRecordType ?? 'existing',
+    previousArrangement: optionalText(input.previousArrangement),
+    previousArrangementSince: optionalText(input.previousArrangementSince),
+    previousArrangementNotes: optionalText(input.previousArrangementNotes),
+  };
   const r: WfhRequest = {
     id, employee: input.employee, role: input.role,
     roleKey: input.role.split('·')[0]!.trim().toLowerCase(),
     jurisdiction: input.jurisdiction, days: input.days, pattern: input.pattern,
+    staffEntry,
     assessment: [], assessmentComplete: false, status: 'pending',
     consistency: { state: 'pending', rationale: 'Runs once the assessment is complete.' },
     audit: [stamp(now, 'Work-from-home notice submitted')],

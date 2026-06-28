@@ -30,9 +30,15 @@ describe('api validation', () => {
       jurisdiction: 'VIC',
       days: '2 days',
       pattern: 'Mon & Tue',
+      staffRecordType: 'existing',
+      previousArrangement: '2 days · Tue & Thu',
+      previousArrangementSince: '2025-02-01',
+      previousArrangementNotes: 'Arrangement entered from staff master record.',
     });
     expect(payload.employee).toBe('Jordan Wells');
     expect(payload.jurisdiction).toBe('VIC');
+    expect(payload.staffRecordType).toBe('existing');
+    expect(payload.previousArrangementSince).toBe('2025-02-01');
   });
 
   test('new request payload rejects invalid jurisdiction', () => {
@@ -42,6 +48,17 @@ describe('api validation', () => {
       jurisdiction: 'NZ',
       days: '2 days',
       pattern: 'Mon & Tue',
+    })).toThrow(ValidationError);
+  });
+
+  test('new request payload rejects invalid staff record type', () => {
+    expect(() => parseNewRequestPayload({
+      employee: 'Jordan Wells',
+      role: 'Account Manager',
+      jurisdiction: 'VIC',
+      days: '2 days',
+      pattern: 'Mon & Tue',
+      staffRecordType: 'contractor',
     })).toThrow(ValidationError);
   });
 

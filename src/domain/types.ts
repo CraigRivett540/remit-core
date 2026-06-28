@@ -29,6 +29,15 @@ export interface Decision {
   decidedAt: string;
 }
 
+export type StaffRecordType = 'existing' | 'new';
+
+export interface StaffEntry {
+  staffRecordType: StaffRecordType;
+  previousArrangement?: string;
+  previousArrangementSince?: string; // YYYY-MM-DD
+  previousArrangementNotes?: string;
+}
+
 export interface WfhRequest {
   id: string;
   employee: string;
@@ -37,6 +46,7 @@ export interface WfhRequest {
   jurisdiction: Jurisdiction;
   days: string;
   pattern: string;
+  staffEntry?: StaffEntry;
   assessment: AssessmentFactor[];
   assessmentComplete: boolean;
   status: RequestStatus;

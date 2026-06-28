@@ -812,9 +812,15 @@
       <div class="field"><label>Employee name</label><input id="nf-name" placeholder="Employee full name"></div>
       <div class="field"><label>Role</label><input id="nf-role" placeholder="Role title"></div>
       <div class="row" style="gap:12px">
+        <div class="field" style="flex:1"><label>Staff record</label><select id="nf-staff-type"><option value="existing" selected>Existing staff member</option><option value="new">New staff member</option></select></div>
+        <div class="field" style="flex:1"><label>Previous arrangement since</label><input id="nf-prev-since" type="date"></div>
+      </div>
+      <div class="row" style="gap:12px">
         <div class="field" style="flex:1"><label>Jurisdiction</label><select id="nf-jur"><option>VIC</option><option>NSW</option><option>QLD</option><option>WA</option></select></div>
         <div class="field" style="flex:1"><label>Days / week</label><select id="nf-days"><option>1 day</option><option selected>2 days</option><option>3 days</option></select></div>
       </div>
+      <div class="field"><label>Previous arrangement details</label><input id="nf-prev-arr" placeholder="e.g. 2 days · Tue & Thu"></div>
+      <div class="field"><label>Previous arrangement notes</label><input id="nf-prev-notes" placeholder="Optional context for existing staff"></div>
       <div class="field"><label>Proposed pattern</label><input id="nf-pat" placeholder="Proposed pattern"></div>
     </div>
     <div class="mf"><button class="btn ghost" onclick="closeNew()">Cancel</button><button class="btn" onclick="submitNew()">Create request</button></div>

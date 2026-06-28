@@ -11,6 +11,25 @@ beforeEach(() => { store = seedDemo(); });
 const PASS = [{ key: 'c', label: 'Client', rating: 'green' as const, note: 'Low' }];
 
 describe('wfh service loop', () => {
+  it('captures staff-entry previous-arrangement details for existing staff', () => {
+    const created = wfh.create(store, {
+      employee: 'Jordan Wells',
+      role: 'Account Manager · Advisory',
+      jurisdiction: 'VIC',
+      days: '2 days',
+      pattern: 'Mon & Tue',
+      staffRecordType: 'existing',
+      previousArrangement: '2 days · Tue & Thu',
+      previousArrangementSince: '2025-01-10',
+      previousArrangementNotes: 'Imported from prior arrangement record.',
+    }, NOW);
+    expect(created.staffEntry).toEqual({
+      staffRecordType: 'existing',
+      previousArrangement: '2 days · Tue & Thu',
+      previousArrangementSince: '2025-01-10',
+      previousArrangementNotes: 'Imported from prior arrangement record.',
+    });
+  });
   it('flags a new AM/VIC request against the seeded prior approval, then blocks refusal', () => {
     const r = wfh.create(store, { employee: 'Jordan Wells', role: 'Account Manager · Advisory', jurisdiction: 'VIC', days: '2 days', pattern: 'Mon & Tue' }, NOW);
     const assessed = wfh.assess(store, r.id, PASS, NOW);
