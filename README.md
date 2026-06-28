@@ -72,3 +72,4 @@ AGENTS.md      Warp/agent project rules + roadmap (read this)
 Illustrative scaffold, not legal advice — verify all legal references with Australian counsel before
 production. The Victorian WFH right is a Bill, not yet an Act. "Remit" is a working name pending
 trademark clearance. Data residency: Australia; APP-grade; no third-party data sharing.
+# remit-core
