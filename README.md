@@ -76,6 +76,23 @@ curl -s https://remit-core.vercel.app/api/health
 curl -s https://remit-core.vercel.app/ | grep '<script type="module" src="/app.js"></script>'
 ```
 
+Latest production deployment (main):
+- Alias: `https://remit-core.vercel.app`
+- Deployment URL: `https://remit-core-lm1k1d2h7-askjarvis.vercel.app`
+- Inspect: `https://vercel.com/askjarvis/remit-core/Ckp5iEvvKmm5zyKKa7U17e5LvVTK`
+- Post-deploy verification:
+  - `GET /api/health` returned `status: ok`, `orgId: org_brightwater`
+  - Root HTML served module app script (`/app.js`)
+
+Latest production smoke test (2026-06-28):
+- PASS: Root page availability and module shell delivery
+- PASS: Health endpoint (`/api/health`)
+- PASS: Core WFH workflow (`create -> assessment -> decision -> letter`)
+- PASS: Hazards endpoints (`/api/hazards` and `/api/hazards/:id/validation`)
+- PASS: Outcome contracts endpoint (`/api/contracts`)
+- Result: no failures detected
+- Note: smoke test creates a real request record in production for end-to-end verification
+
 ## PR review monitoring alerts (macOS)
 A local LaunchAgent can notify when PR review feedback arrives.
 
