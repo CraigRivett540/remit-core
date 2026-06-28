@@ -1,4 +1,4 @@
-import { seed } from './store/memory.js';
+import { seedDemo } from './store/memory.js';
 import * as wfh from './services/wfh.js';
 import * as whs from './services/whs.js';
 import * as outcomes from './services/outcomes.js';
@@ -8,7 +8,7 @@ const line = (s = '') => console.log(s);
 const rule = () => line('─'.repeat(64));
 const now = new Date('2026-06-28T00:00:00Z');
 
-const store = seed();
+const store = seedDemo();
 const PASS = [
   { key: 'client', label: 'Client interaction', rating: 'green' as const, note: 'Low — virtual' },
   { key: 'whs', label: 'Home WHS assessment', rating: 'green' as const, note: 'Pass' },

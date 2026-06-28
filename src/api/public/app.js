@@ -69,7 +69,7 @@ const DEMO_STEPS = [
   { t: 'Open WFH Requests', d: 'Review requests and decision files.', go: () => showScreen('requests') },
   { t: 'Open Wellbeing & WHS', d: 'Inspect hazards and complete review events.', go: () => showScreen('whs') },
   { t: 'Open Outcomes', d: 'Record outcome-contract cycle reviews.', go: () => showScreen('outcomes') },
-  { t: 'Refresh data', d: 'Reload current API state without any seeded frontend records.', go: () => void resetDemo() },
+  { t: 'Refresh data', d: 'Reload current API state from the server.', go: () => void resetDemo() },
 ];
 let demoDone = [];
 
@@ -269,6 +269,29 @@ function renderOrgDetails() {
   if (orgJurisdictions) orgJurisdictions.textContent = ordered.length ? ordered.join(' · ') : 'No request records yet';
 }
 
+function renderJurisdictionBars() {
+  const container = byId('jur-bars');
+  if (!container) return;
+
+  const counts = state.requests.reduce((acc, request) => {
+    acc[request.jurisdiction] = (acc[request.jurisdiction] ?? 0) + 1;
+    return acc;
+  }, {});
+  const ordered = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (!ordered.length) {
+    container.innerHTML = '<div class="ctrlnote">No jurisdiction data yet. It will populate as requests are added.</div>';
+    return;
+  }
+
+  const max = ordered[0][1] || 1;
+  container.innerHTML = ordered
+    .map(([jurisdiction, count]) => {
+      const width = Math.max(10, Math.round((count / max) * 100));
+      return `<div class="jbar"><span class="jn">${esc(jurisdiction)}</span><div class="track"><div class="fill" style="width:${width}%"></div></div><span class="jv">${count}</span></div>`;
+    })
+    .join('');
+}
+
 function filteredRequests() {
   if (state.currentFilter === 'all') return state.requests;
   return state.requests.filter((request) => request.status === state.currentFilter);
@@ -421,9 +444,10 @@ function updateOverview() {
   }
   if (statMeta.length >= 5) {
     if (statMeta[2]) statMeta[2].textContent = `${dueHazards} review due`;
-    if (statMeta[3]) statMeta[3].textContent = `${onTrackOutcomes} on track`;
-    if (statMeta[4]) statMeta[4].textContent = 'Outcome-state proxy';
+    if (statMeta[3]) statMeta[3].textContent = state.outcomes.length ? `${onTrackOutcomes} on track` : 'No contracts yet';
+    if (statMeta[4]) statMeta[4].textContent = state.outcomes.length ? 'Outcome-state proxy' : 'No data yet';
   }
+  renderJurisdictionBars();
 
   const badge = byId('nav-badge');
   if (badge) {
@@ -470,7 +494,13 @@ function updateOverview() {
         <button class="btn ghost sm go" onclick="openRequest('${esc(request.id)}')">Open</button>
       </div>`);
     });
-  queue.innerHTML = items.join('') || '<div class="empty">Nothing needs attention. Every request is decided and recorded.</div>';
+  if (items.length) {
+    queue.innerHTML = items.join('');
+    return;
+  }
+  queue.innerHTML = state.requests.length || state.hazards.length || state.outcomes.length
+    ? '<div class="empty">Nothing needs attention right now.</div>'
+    : '<div class="empty">No records yet. Add your first request, hazard, or outcome contract to begin.</div>';
 }
 
 function updateCountdown() {

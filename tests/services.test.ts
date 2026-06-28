@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { seed, type Store } from '../src/store/memory.js';
+import { seedDemo, type Store } from '../src/store/memory.js';
 import * as wfh from '../src/services/wfh.js';
 import * as whs from '../src/services/whs.js';
 import * as outcomes from '../src/services/outcomes.js';
@@ -7,7 +7,7 @@ import { GuardError } from '../src/services/errors.js';
 
 const NOW = new Date('2026-06-28T00:00:00Z');
 let store: Store;
-beforeEach(() => { store = seed(); });
+beforeEach(() => { store = seedDemo(); });
 const PASS = [{ key: 'c', label: 'Client', rating: 'green' as const, note: 'Low' }];
 
 describe('wfh service loop', () => {

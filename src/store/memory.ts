@@ -13,6 +13,17 @@ export interface Store {
 
 export function seed(): Store {
   return {
+    org: { id: 'org_brightwater', name: 'Organisation', jurisdictions: [] },
+    seq: 0,
+    requests: [],
+    priorDecisions: [],
+    hazards: [],
+    contracts: [],
+  };
+}
+
+export function seedDemo(): Store {
+  return {
     org: { id: 'org_brightwater', name: 'Brightwater Group', jurisdictions: ['VIC', 'NSW', 'QLD', 'WA'] },
     seq: 142,
     requests: [
