@@ -54,6 +54,54 @@ Open `http://localhost:4000` after `npm start` to use the live platform UI.
 - Validate/review WHS hazards and record outcome cycle reviews
 All interactions call the same guarded API/service/domain pipeline used by tests.
 
+## Deployment (Vercel)
+Production is deployed to:
+- `https://remit-core.vercel.app`
+
+Deploy from the repository root:
+```bash
+# first-time auth (if needed)
+npx vercel login
+
+# preview deployment
+npx vercel
+
+# production deployment + alias update
+npx vercel --prod --yes
+```
+
+Quick production checks:
+```bash
+curl -s https://remit-core.vercel.app/api/health
+curl -s https://remit-core.vercel.app/ | grep '<script type="module" src="/app.js"></script>'
+```
+
+## PR review monitoring alerts (macOS)
+A local LaunchAgent can notify when PR review feedback arrives.
+
+Current watcher setup:
+- Script: `/Users/craigrivett/.local/bin/remit-pr-review-watch.sh`
+- LaunchAgent: `/Users/craigrivett/Library/LaunchAgents/dev.remit.pr1.review-watch.plist`
+- Poll interval: every 60 seconds
+- Scope: `CraigRivett540/remit-core` PR `#1` (new inline review comments + review events)
+
+LaunchAgent controls:
+```bash
+# start / reload
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.remit.pr1.review-watch.plist
+launchctl kickstart -k gui/$(id -u)/dev.remit.pr1.review-watch
+
+# stop
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/dev.remit.pr1.review-watch.plist
+
+# status
+launchctl print gui/$(id -u)/dev.remit.pr1.review-watch
+```
+
+Watcher logs:
+- `~/.cache/remit-pr-watch/watch.log`
+- `~/.cache/remit-pr-watch/watch.err.log`
+
 ## Layout
 ```
 src/domain/    pure, framework-agnostic IP (types, jurisdictions, consistency, decisions, hazards, outcomes, letters)
