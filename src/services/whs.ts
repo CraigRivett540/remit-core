@@ -1,7 +1,7 @@
-import type { Store } from '../store/memory';
-import type { Hazard } from '../domain/types';
-import { validateControls, completeReview } from '../domain/hazards';
-import { NotFoundError } from './errors';
+import type { Store } from '../store/memory.js';
+import type { Hazard } from '../domain/types.js';
+import { validateControls, completeReview } from '../domain/hazards.js';
+import { NotFoundError } from './errors.js';
 
 function get(store: Store, id: string): Hazard {
   const h = store.hazards.find((x) => x.id === id);

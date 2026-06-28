@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { validateControls, completeReview } from '../src/domain/hazards';
-import { hazard, FIXED } from './fixtures';
+import { validateControls, completeReview } from '../src/domain/hazards.js';
+import { hazard, FIXED } from './fixtures.js';
 
 describe('WHS hierarchy-of-controls guardrail', () => {
   it('rejects a VIC psychosocial hazard with only lower-order controls', () => {

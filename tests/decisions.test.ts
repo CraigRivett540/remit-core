@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { completeAssessment, canDecide, decide, selectLetterTemplate } from '../src/domain/decisions';
-import { renderDecisionLetter } from '../src/domain/letters';
-import { PRIOR, request, FIXED } from './fixtures';
+import { completeAssessment, canDecide, decide, selectLetterTemplate } from '../src/domain/decisions.js';
+import { renderDecisionLetter } from '../src/domain/letters.js';
+import { PRIOR, request, FIXED } from './fixtures.js';
 
 const factors = [{ key: 'client', label: 'Client interaction', rating: 'green' as const, note: 'Low' }];
 

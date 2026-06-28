@@ -1,4 +1,4 @@
-import type { Jurisdiction } from './types';
+import type { Jurisdiction } from './types.js';
 
 // COUNSEL: every reference below is an illustrative scaffold and MUST be verified by qualified
 // Australian counsel before production reliance. The Victorian WFH right is a Bill, not yet an Act.

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { seed, type Store } from '../src/store/memory';
-import * as wfh from '../src/services/wfh';
-import * as whs from '../src/services/whs';
-import * as outcomes from '../src/services/outcomes';
-import { GuardError } from '../src/services/errors';
+import { seed, type Store } from '../src/store/memory.js';
+import * as wfh from '../src/services/wfh.js';
+import * as whs from '../src/services/whs.js';
+import * as outcomes from '../src/services/outcomes.js';
+import { GuardError } from '../src/services/errors.js';
 
 const NOW = new Date('2026-06-28T00:00:00Z');
 let store: Store;

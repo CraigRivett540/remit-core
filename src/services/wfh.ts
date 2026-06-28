@@ -1,10 +1,10 @@
-import type { Store } from '../store/memory';
-import type { WfhRequest, AssessmentFactor, DecisionType, Jurisdiction } from '../domain/types';
-import { completeAssessment, decide, canDecide } from '../domain/decisions';
-import { resolveByDistinguishing, resolveByAlignment } from '../domain/consistency';
-import { renderDecisionLetter } from '../domain/letters';
-import { stamp } from '../domain/audit';
-import { NotFoundError, GuardError } from './errors';
+import type { Store } from '../store/memory.js';
+import type { WfhRequest, AssessmentFactor, DecisionType, Jurisdiction } from '../domain/types.js';
+import { completeAssessment, decide, canDecide } from '../domain/decisions.js';
+import { resolveByDistinguishing, resolveByAlignment } from '../domain/consistency.js';
+import { renderDecisionLetter } from '../domain/letters.js';
+import { stamp } from '../domain/audit.js';
+import { NotFoundError, GuardError } from './errors.js';
 
 function upsert(store: Store, r: WfhRequest): WfhRequest {
   const i = store.requests.findIndex((x) => x.id === r.id);

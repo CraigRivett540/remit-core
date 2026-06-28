@@ -1,7 +1,7 @@
-import type { Store } from '../store/memory';
-import type { OutcomeContract } from '../domain/types';
-import { recordCycleReview } from '../domain/outcomes';
-import { NotFoundError } from './errors';
+import type { Store } from '../store/memory.js';
+import type { OutcomeContract } from '../domain/types.js';
+import { recordCycleReview } from '../domain/outcomes.js';
+import { NotFoundError } from './errors.js';
 
 export function list(store: Store): OutcomeContract[] { return store.contracts; }
 export function review(store: Store, id: string, now = new Date()): OutcomeContract {

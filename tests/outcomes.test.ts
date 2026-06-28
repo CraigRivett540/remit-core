@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { recordCycleReview } from '../src/domain/outcomes';
-import { contract, FIXED } from './fixtures';
+import { recordCycleReview } from '../src/domain/outcomes.js';
+import { contract, FIXED } from './fixtures.js';
 
 describe('outcome contracts', () => {
   it('records a cycle review with delivered count and retention audit', () => {

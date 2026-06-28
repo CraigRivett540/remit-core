@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { runConsistencyCheck, findComparable, resolveByDistinguishing, resolveByAlignment } from '../src/domain/consistency';
-import { PRIOR, request } from './fixtures';
+import { runConsistencyCheck, findComparable, resolveByDistinguishing, resolveByAlignment } from '../src/domain/consistency.js';
+import { PRIOR, request } from './fixtures.js';
 
 describe('consistency engine', () => {
   it('flags a comparable approved role in the same jurisdiction', () => {

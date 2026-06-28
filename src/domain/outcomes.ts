@@ -1,5 +1,5 @@
-import type { OutcomeContract } from './types';
-import { stamp } from './audit';
+import type { OutcomeContract } from './types.js';
+import { stamp } from './audit.js';
 
 // Outcome contracts read DELIVERY STATE only (from existing tools). Never keystrokes,
 // screenshots or activity. Performance records support a defensible, procedurally fair process

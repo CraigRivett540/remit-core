@@ -1,8 +1,8 @@
-import { seed } from './store/memory';
-import * as wfh from './services/wfh';
-import * as whs from './services/whs';
-import * as outcomes from './services/outcomes';
-import { GuardError } from './services/errors';
+import { seed } from './store/memory.js';
+import * as wfh from './services/wfh.js';
+import * as whs from './services/whs.js';
+import * as outcomes from './services/outcomes.js';
+import { GuardError } from './services/errors.js';
 
 const line = (s = '') => console.log(s);
 const rule = () => line('─'.repeat(64));

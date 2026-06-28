@@ -1,4 +1,4 @@
-import type { WfhRequest, PriorDecision, ConsistencyResult } from './types';
+import type { WfhRequest, PriorDecision, ConsistencyResult } from './types.js';
 
 // The signature guardrail: catch inconsistent (potentially discriminatory / adverse) decisions
 // BEFORE they ship, by comparing against prior decisions for materially comparable roles.

@@ -1,5 +1,5 @@
-import type { WfhRequest } from './types';
-import { JURISDICTION_PROFILES } from './jurisdictions';
+import type { WfhRequest } from './types.js';
+import { JURISDICTION_PROFILES } from './jurisdictions.js';
 
 /** Renders a decision-letter scaffold. COUNSEL: templates must be lawyer-approved before issue. */
 export function renderDecisionLetter(request: WfhRequest): string {

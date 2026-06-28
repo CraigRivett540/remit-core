@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { JURISDICTION_PROFILES, ALL_JURISDICTIONS } from '../src/domain/jurisdictions';
+import { JURISDICTION_PROFILES, ALL_JURISDICTIONS } from '../src/domain/jurisdictions.js';
 
 describe('jurisdiction profiles', () => {
   it('covers all eight Australian jurisdictions', () => {

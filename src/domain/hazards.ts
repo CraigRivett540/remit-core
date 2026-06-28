@@ -1,6 +1,6 @@
-import type { Hazard } from './types';
-import { JURISDICTION_PROFILES } from './jurisdictions';
-import { stamp } from './audit';
+import type { Hazard } from './types.js';
+import { JURISDICTION_PROFILES } from './jurisdictions.js';
+import { stamp } from './audit.js';
 
 export interface ControlValidation { valid: boolean; issues: string[]; warnings: string[]; }
 

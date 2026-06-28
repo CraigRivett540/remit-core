@@ -1,4 +1,4 @@
-import type { WfhRequest, PriorDecision, Hazard, OutcomeContract } from '../src/domain/types';
+import type { WfhRequest, PriorDecision, Hazard, OutcomeContract } from '../src/domain/types.js';
 
 export const PRIOR: PriorDecision[] = [
   { id: 'WFH-2026-0129', roleKey: 'account manager', jurisdiction: 'VIC', status: 'approved', days: '2 days', date: '2 Jun 2026' },

@@ -1,4 +1,4 @@
-import type { WfhRequest, PriorDecision, Hazard, OutcomeContract, Jurisdiction } from '../domain/types';
+import type { WfhRequest, PriorDecision, Hazard, OutcomeContract, Jurisdiction } from '../domain/types.js';
 
 // Org-scoped in-memory store for the reference app. Swap for the Prisma repositories (M2)
 // without touching the domain core or services.

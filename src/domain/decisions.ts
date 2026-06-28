@@ -1,7 +1,7 @@
-import type { WfhRequest, DecisionType, AssessmentFactor, PriorDecision } from './types';
-import { runConsistencyCheck } from './consistency';
-import { JURISDICTION_PROFILES } from './jurisdictions';
-import { stamp } from './audit';
+import type { WfhRequest, DecisionType, AssessmentFactor, PriorDecision } from './types.js';
+import { runConsistencyCheck } from './consistency.js';
+import { JURISDICTION_PROFILES } from './jurisdictions.js';
+import { stamp } from './audit.js';
 
 export function selectLetterTemplate(request: WfhRequest, type: DecisionType): string {
   const prefix = JURISDICTION_PROFILES[request.jurisdiction].letterPrefix;
