@@ -122,6 +122,21 @@ button:hover {
 .table-wrap {
   overflow-x: auto;
 }
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+}
+
+.pager button {
+  padding: 0.35rem 0.65rem;
+}
+
+.pager span {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
 
 table {
   width: 100%;

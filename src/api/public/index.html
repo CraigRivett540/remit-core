@@ -1,159 +1,840 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en-AU">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Remit Platform</title>
-  <link rel="stylesheet" href="/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remit — Workforce-Flexibility Governance · Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#F4F2EC;--surface:#FFFFFF;--surface-2:#FAF8F3;
+    --ink:#181A17;--ink-soft:#5C5F58;--ink-faint:#8A8D85;
+    --brand:#123B33;--brand-2:#1C5A4E;--brand-ink:#EAF0EC;
+    --ochre:#C07A1E;--ochre-soft:#F5E9D6;
+    --green:#2E7D5B;--green-soft:#E2F0E8;
+    --amber:#B07A12;--amber-soft:#F6ECD4;
+    --red:#B23A2E;--red-soft:#F4E2DF;
+    --line:rgba(24,26,23,0.12);--line-2:rgba(24,26,23,0.07);
+    --sidebar-w:248px;
+    --display:'Spectral',Georgia,serif;--ui:'Public Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+  body{background:var(--canvas);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  textarea,select,input{font-family:inherit}
+  :focus-visible{outline:2px solid var(--ochre);outline-offset:2px;border-radius:3px}
+
+  /* ============ LANDING ============ */
+  #landing{min-height:100vh;background:var(--canvas)}
+  .ltop{display:flex;align-items:center;padding:20px 40px;max-width:1180px;margin:0 auto}
+  .ltop .sp{margin-left:auto;display:flex;gap:14px;align-items:center}
+  .lnav{font-family:var(--mono);font-size:11px;letter-spacing:.6px;color:var(--ink-soft)}
+  .lhero{max-width:1180px;margin:0 auto;padding:40px 40px 30px;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+  .lhero .eyebrow{margin-bottom:18px}
+  .lhero h1{font-family:var(--display);font-size:clamp(40px,5.4vw,64px);font-weight:700;line-height:1.02;letter-spacing:-.5px}
+  .lhero h1 .o{color:var(--ochre)}
+  .lhero p{font-size:17px;color:var(--ink-soft);margin-top:20px;max-width:46ch;line-height:1.55}
+  .lhero .cta{margin-top:28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .lcard-art{background:var(--brand);border-radius:18px;padding:26px;color:#fff;position:relative;overflow:hidden}
+  .lcard-art .glow{position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:var(--ochre);opacity:.18;border-radius:50%}
+  .lcard-art .mini{font-family:var(--mono);font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ochre)}
+  .lcard-art .mh{font-family:var(--display);font-size:20px;font-weight:600;margin:6px 0 16px}
+  .lminirow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:#cfe0d8}
+  .lminirow .tick{width:18px;height:18px;border-radius:50%;background:var(--ochre);color:#231405;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:0 0 auto}
+  .lstreams{max-width:1180px;margin:0 auto;padding:30px 40px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .lstream{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .lstream .sn{font-family:var(--mono);font-size:11px;color:var(--ochre);font-weight:600}
+  .lstream h3{font-family:var(--display);font-size:19px;font-weight:600;margin:6px 0 8px}
+  .lstream p{font-size:13px;color:var(--ink-soft);line-height:1.5}
+  .linvert{max-width:1180px;margin:0 auto;padding:14px 40px 50px}
+  .linvert .strip{background:var(--ink);color:#e9e7df;border-radius:14px;padding:22px 26px;display:flex;gap:30px;align-items:center;flex-wrap:wrap}
+  .linvert .strip .q{font-family:var(--display);font-size:18px;font-weight:500;flex:1;min-width:280px;line-height:1.35}
+  .linvert .strip .q b{color:var(--ochre)}
+  .lfoot{max-width:1180px;margin:0 auto;padding:0 40px 40px;font-family:var(--mono);font-size:10px;letter-spacing:.6px;color:var(--ink-faint)}
+
+  /* ============ APP SHELL ============ */
+  .app{display:flex;min-height:100vh}
+  .side{width:var(--sidebar-w);flex:0 0 var(--sidebar-w);background:var(--brand);color:var(--brand-ink);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:22px 14px 16px}
+  .logo{display:flex;align-items:center;gap:10px;padding:4px 8px 0;cursor:pointer}
+  .logo .mark{width:30px;height:30px;border:2px solid var(--ochre);border-radius:7px;position:relative;flex:0 0 auto}
+  .logo .mark::before{content:"";position:absolute;left:6px;top:6px;right:6px;bottom:6px;background:var(--ochre);border-radius:2px;opacity:.92}
+  .logo .name{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:.3px;color:#fff}
+  .logo .tm{font-size:9px;vertical-align:super;color:var(--ochre);font-family:var(--mono)}
+  .org{margin:18px 8px 14px;padding:11px 12px;background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.08)}
+  .org .lab{font-family:var(--mono);font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;color:#9db5ac}
+  .org .nm{font-size:13px;font-weight:600;color:#fff;margin-top:2px}
+  .org .ju{font-family:var(--mono);font-size:10px;color:#a9c2b8;margin-top:4px;letter-spacing:.3px}
+  .nav{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+  .nav .sect{font-family:var(--mono);font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;color:#7fa093;padding:14px 12px 6px}
+  .nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:9px 12px;border-radius:8px;color:#cfe0d8;font-size:13.5px;font-weight:500;border-left:3px solid transparent;transition:background .14s,color .14s}
+  .nav button:hover{background:rgba(255,255,255,0.05);color:#fff}
+  .nav button.active{background:rgba(192,122,30,0.16);color:#fff;border-left-color:var(--ochre)}
+  .nav button .ic{width:17px;height:17px;flex:0 0 auto;opacity:.9}
+  .nav button .badge{margin-left:auto;font-family:var(--mono);font-size:10px;background:var(--ochre);color:#231405;padding:1px 6px;border-radius:9px;font-weight:600}
+  .side-foot{margin-top:auto;padding:14px 12px 4px;border-top:1px solid rgba(255,255,255,0.09)}
+  .side-foot .u{display:flex;align-items:center;gap:9px}
+  .side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--ochre);color:#231405;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 auto}
+  .side-foot .un{font-size:12.5px;font-weight:600;color:#fff;line-height:1.2}
+  .side-foot .ur{font-size:10.5px;color:#9db5ac}
+
+  .main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+  .ribbon{background:var(--ink);color:#e9e7df;font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;padding:6px 26px;display:flex;align-items:center;gap:10px}
+  .ribbon .dot{width:6px;height:6px;border-radius:50%;background:var(--ochre)}
+  .topbar{display:flex;align-items:center;gap:16px;padding:16px 26px;background:var(--surface);border-bottom:1px solid var(--line)}
+  .topbar h1{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:.2px}
+  .topbar .crumb{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);letter-spacing:.4px;text-transform:uppercase}
+  .topbar .sp{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .chip{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);border:1px solid var(--line);padding:5px 10px;border-radius:7px;background:var(--surface-2)}
+  .btn{font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:8px;background:var(--brand);color:#fff;transition:background .14s}
+  .btn:hover{background:var(--brand-2)}
+  .btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--line)}
+  .btn.ghost:hover{background:var(--surface-2)}
+  .btn.sm{padding:6px 11px;font-size:11.5px}
+  .btn.lg{padding:11px 20px;font-size:14px}
+  .btn[disabled]{opacity:.42;cursor:not-allowed}
+  .btn.danger{background:var(--red)}.btn.danger:hover{background:#9c3025}
+
+  .content{padding:24px 26px 70px;max-width:1180px}
+  .screen{display:none}
+  .screen.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--ochre);font-weight:600}
+  .h2{font-family:var(--display);font-size:18px;font-weight:600;margin:0 0 2px}
+  .sub{color:var(--ink-soft);font-size:12.5px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+  .pad{padding:18px 20px}
+  .row{display:flex;gap:16px}
+  .grid{display:grid;gap:16px}
+  .mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}
+
+  .commence{display:flex;align-items:center;gap:18px;background:linear-gradient(100deg,#123B33,#1C5A4E);color:#fff;border-radius:12px;padding:18px 22px;overflow:hidden;position:relative}
+  .commence .big{font-family:var(--display);font-size:40px;font-weight:700;line-height:.9;color:#fff}
+  .commence .big small{font-size:14px;font-weight:500;color:var(--ochre);display:block;font-family:var(--ui);margin-top:4px;letter-spacing:.3px}
+  .commence .txt{flex:1}
+  .commence .txt .t1{font-weight:700;font-size:15px}
+  .commence .txt .t2{font-size:12.5px;color:#bcd3ca;margin-top:3px;max-width:52ch}
+  .commence .tag{font-family:var(--mono);font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ochre)}
+
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:18px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:15px 16px}
+  .stat .n{font-family:var(--display);font-size:30px;font-weight:600;line-height:1}
+  .stat .l{font-size:11.5px;color:var(--ink-soft);margin-top:6px;line-height:1.3}
+  .stat.flag .n{color:var(--ochre)}
+  .stat .meta{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:7px;letter-spacing:.3px}
+
+  .att{display:flex;flex-direction:column}
+  .att .item{display:flex;gap:13px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line-2)}
+  .att .item:last-child{border-bottom:none}
+  .att .ic{width:24px;height:24px;border-radius:7px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px}
+  .att .ic.o{background:var(--ochre-soft);color:var(--ochre)}
+  .att .ic.r{background:var(--red-soft);color:var(--red)}
+  .att .ic.a{background:var(--amber-soft);color:var(--amber)}
+  .att .tt{font-weight:600;font-size:13px}
+  .att .ds{font-size:12px;color:var(--ink-soft);margin-top:1px}
+  .att .go{margin-left:auto;align-self:center}
+  .att .empty{font-size:12.5px;color:var(--ink-faint);padding:10px 0;font-style:italic}
+
+  .jbar{display:flex;align-items:center;gap:12px;margin:9px 0}
+  .jbar .jn{font-family:var(--mono);font-size:11px;width:36px;color:var(--ink-soft)}
+  .jbar .track{flex:1;height:9px;background:var(--surface-2);border-radius:6px;overflow:hidden;border:1px solid var(--line-2)}
+  .jbar .fill{height:100%;background:var(--brand)}
+  .jbar .jv{font-family:var(--mono);font-size:11px;width:28px;text-align:right;color:var(--ink-soft)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.5px;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pill.approved{background:var(--green-soft);color:var(--green)}
+  .pill.refused{background:var(--red-soft);color:var(--red)}
+  .pill.flagged{background:var(--ochre-soft);color:var(--ochre)}
+  .pill.pending{background:rgba(24,26,23,0.06);color:var(--ink-soft)}
+  .pill.modified{background:#E3EEF0;color:#1C5A4E}
+
+  table.tb{width:100%;border-collapse:collapse;font-size:13px}
+  table.tb th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);padding:0 12px 10px;font-weight:600;border-bottom:1px solid var(--line)}
+  table.tb td{padding:13px 12px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  table.tb tr.clk{cursor:pointer;transition:background .12s}
+  table.tb tr.clk:hover td{background:var(--surface-2)}
+  .who{display:flex;align-items:center;gap:10px}
+  .who .av{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex:0 0 auto;font-family:var(--ui)}
+  .who .nm{font-weight:600}
+  .who .rl{font-size:11.5px;color:var(--ink-faint)}
+  .mono{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)}
+  .jtag{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--brand);background:var(--surface-2);border:1px solid var(--line);padding:2px 7px;border-radius:6px}
+
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+  .fchip{font-family:var(--mono);font-size:11px;letter-spacing:.4px;padding:6px 12px;border-radius:20px;border:1px solid var(--line);color:var(--ink-soft);background:var(--surface);transition:all .12s}
+  .fchip:hover{border-color:var(--brand)}
+  .fchip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  .detail{display:none}
+  .detail.active{display:block;animation:fade .25s ease}
+  .back{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
+  .back:hover{color:var(--brand)}
+  .dhead{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .dhead .who .av{width:46px;height:46px;font-size:16px}
+  .dhead .nm2{font-family:var(--display);font-size:22px;font-weight:600;line-height:1.1}
+  .dhead .rl2{font-size:13px;color:var(--ink-soft);margin-top:2px}
+  .dhead .idln{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:5px;letter-spacing:.3px}
+  .dhead .rt{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+
+  .dgrid{display:grid;grid-template-columns:1fr 320px;gap:18px;margin-top:20px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .panel .ph{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .panel .ph .step{font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;background:var(--brand);width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .panel .ph .pt{font-weight:600;font-size:13.5px}
+  .panel .ph .pmeta{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.4px}
+  .panel .pb{padding:16px 18px}
+
+  .framew{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .framew .fw{flex:1 1 50%;min-width:220px;padding:12px 15px}
+  .framew .fw:first-child{border-right:1px solid var(--line)}
+  .framew .fl{font-family:var(--mono);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-faint)}
+  .framew .fv{font-size:12.5px;font-weight:500;margin-top:4px;line-height:1.4}
+  .framew .fw.future{background:var(--ochre-soft)}
+  .framew .fw.future .fl{color:var(--ochre)}
+
+  .reqline{display:flex;gap:24px;flex-wrap:wrap}
+  .reqline .rl3{font-family:var(--mono);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-faint)}
+  .reqline .rv3{font-size:14px;font-weight:600;margin-top:3px}
+
+  .asmt{display:flex;flex-direction:column}
+  .asmt .ar{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-2)}
+  .asmt .ar:last-child{border-bottom:none}
+  .asmt .dotf{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .asmt .dotf.green{background:var(--green)}.asmt .dotf.amber{background:var(--amber)}.asmt .dotf.red{background:var(--red)}
+  .asmt .aq{font-size:12.5px;font-weight:600;width:42%}
+  .asmt .aa{font-size:12.5px;color:var(--ink-soft);flex:1}
+
+  .ccheck{border-radius:10px;padding:15px 17px}
+  .ccheck.flag{background:var(--ochre-soft);border:1px solid #e6c98f}
+  .ccheck.clear{background:var(--green-soft);border:1px solid #bfe0cf}
+  .ccheck.resolved{background:#EDF1F0;border:1px solid #c4d6d0}
+  .ccheck.idle{background:rgba(24,26,23,0.04);border:1px solid var(--line)}
+  .ccheck .cct{display:flex;align-items:center;gap:9px;font-weight:700;font-size:13.5px}
+  .ccheck.flag .cct{color:#8a5a12}.ccheck.clear .cct{color:var(--green)}.ccheck.resolved .cct{color:#1C5A4E}.ccheck.idle .cct{color:var(--ink-soft)}
+  .ccheck .cci{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex:0 0 auto}
+  .ccheck.flag .cci{background:var(--ochre)}.ccheck.clear .cci{background:var(--green)}.ccheck.resolved .cci{background:#1C5A4E}.ccheck.idle .cci{background:var(--ink-faint)}
+  .ccheck p{font-size:12.5px;margin-top:8px;line-height:1.5}
+  .ccheck .cmp{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:7px;margin-top:9px;color:var(--ink)}
+  .ccheck .rec{margin-top:9px;font-size:12.5px}
+  .ccheck .rec b{color:#8a5a12}
+
+  .grounds{margin-top:4px}
+  .grounds .gl{font-family:var(--mono);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+  .sel{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--ink);background:var(--surface)}
+  .ta{width:100%;min-height:74px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--ink);background:var(--surface);resize:vertical;line-height:1.5}
+  .distinguish{margin-top:12px;padding:12px;border:1px dashed var(--ochre);border-radius:9px;background:rgba(192,122,30,0.05)}
+  .distinguish .dl{font-size:11px;color:#8a5a12;font-weight:600;margin-bottom:7px}
+  .dec-actions{display:flex;gap:9px;margin-top:13px;flex-wrap:wrap}
+  .locknote{font-size:11.5px;color:var(--ink-faint);margin-top:9px;font-style:italic}
+
+  .lettercard{border:1px dashed var(--line);border-radius:9px;padding:13px 15px;background:var(--surface-2)}
+  .lettercard.issued{border-style:solid;border-color:#bfe0cf;background:var(--green-soft)}
+  .lettercard .lt{font-weight:600;font-size:12.5px}
+  .lettercard .lm{font-size:11.5px;color:var(--ink-soft);margin-top:3px}
+  .lettercard .tmpl{font-family:var(--mono);font-size:10.5px;color:var(--brand);margin-top:6px}
+
+  .rail{position:relative;padding-left:6px}
+  .rail .ev{position:relative;padding:0 0 16px 22px;border-left:2px solid var(--ochre)}
+  .rail .ev:last-child{padding-bottom:0}
+  .rail .ev::before{content:"";position:absolute;left:-6px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--ochre);border:2px solid var(--surface)}
+  .rail .ev.pending::before{background:var(--surface);border:2px solid var(--ink-faint)}
+  .rail .et{font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.3px}
+  .rail .ee{font-size:12.5px;font-weight:500;margin-top:2px;line-height:1.4}
+  .rail .ev.pending .ee{color:var(--ink-faint);font-style:italic;font-weight:400}
+  .export{margin-top:14px;width:100%}
+  .ctrlnote{font-size:11px;color:var(--ink-faint);font-style:italic;margin-top:3px}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .minibar{display:flex;align-items:flex-end;gap:6px;height:90px;margin-top:6px}
+  .minibar .b{flex:1;background:var(--brand);border-radius:4px 4px 0 0;min-height:6px;position:relative}
+  .minibar .b.hi{background:var(--ochre)}
+  .minibar .b span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
+  .legend{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:24px;letter-spacing:.3px}
+  .kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line-2);font-size:12.5px}
+  .kv:last-child{border-bottom:none}
+  .kv .k{color:var(--ink-soft)}.kv .v{font-weight:600}
+
+  .jcards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .jcard .jh{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .jcard .jbig{font-family:var(--display);font-size:18px;font-weight:700;color:var(--brand)}
+  .jcard .jrow{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-2);font-size:12px}
+  .jcard .jrow:last-child{border-bottom:none}
+  .jcard .jk{font-family:var(--mono);font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);width:90px;flex:0 0 90px;padding-top:1px}
+  .jcard .jval{flex:1;line-height:1.4}
+  .watchrow{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--line-2)}
+  .watchrow:last-child{border-bottom:none}
+  .watchrow .wd{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ochre);width:90px;flex:0 0 90px}
+  .watchrow .ww{font-size:12.5px;line-height:1.4}
+  .disclaim{font-size:11px;color:var(--ink-faint);line-height:1.5;margin-top:14px;padding-left:12px;border-left:2px solid var(--line)}
+
+  /* modal + toast */
+  .overlay{position:fixed;inset:0;background:rgba(24,26,23,.5);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
+  .overlay.open{display:flex;animation:fade .18s ease}
+  .modal{background:var(--surface);border-radius:14px;width:100%;max-width:460px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .modal .mh{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+  .modal .mh h3{font-family:var(--display);font-size:18px;font-weight:600}
+  .modal .mh .x{margin-left:auto;font-size:20px;color:var(--ink-faint);line-height:1}
+  .modal .mb{padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+  .field label{font-family:var(--mono);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:5px}
+  .field input,.field select{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:13px;background:var(--surface)}
+  .modal .mf{padding:16px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:11px 20px;border-radius:10px;opacity:0;pointer-events:none;transition:all .25s;z-index:90;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:9px}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast .td{width:7px;height:7px;border-radius:50%;background:var(--ochre)}
+
+  .menu-btn{display:none;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--line);border-radius:8px}
+  @media(max-width:1000px){.stats{grid-template-columns:repeat(2,1fr)}.dgrid,.twocol,.jcards,.lhero,.lstreams{grid-template-columns:1fr}.lstreams{gap:12px}}
+  @media(max-width:780px){
+    .side{position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);transition:transform .2s}
+    .side.open{transform:none}.menu-btn{display:inline-flex}
+    .content{padding:18px 16px 60px}.commence{flex-direction:column;align-items:flex-start;gap:10px}
+    .ltop,.lhero,.lstreams,.linvert,.lfoot{padding-left:20px;padding-right:20px}
+  }
+  /* ---- landing: why band ---- */
+  .lwhy{max-width:1180px;margin:0 auto;padding:18px 40px 8px}
+  .lwhy .band{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ochre);border-radius:14px;padding:24px 28px}
+  .lwhy .wlab{font-family:var(--mono);font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--ochre);font-weight:600}
+  .lwhy h2{font-family:var(--display);font-size:24px;font-weight:600;margin:8px 0 6px;line-height:1.2}
+  .lwhy p{font-size:14.5px;color:var(--ink-soft);max-width:84ch;line-height:1.6}
+  .lwhy .wstats{display:flex;gap:34px;margin-top:18px;flex-wrap:wrap}
+  .lwhy .ws .wn{font-family:var(--display);font-size:26px;font-weight:700;color:var(--brand)}
+  .lwhy .ws .wt{font-size:12px;color:var(--ink-soft);max-width:24ch}
+
+  /* ---- landing: feature tabs ---- */
+  .lfeat{max-width:1180px;margin:0 auto;padding:26px 40px 10px}
+  .lfeat .fhd{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .lfeat h2{font-family:var(--display);font-size:24px;font-weight:600}
+  .lfeat .fsub{font-size:13px;color:var(--ink-soft)}
+  .ftabs{display:flex;gap:8px;flex-wrap:wrap}
+  .ftab{font-family:var(--mono);font-size:11.5px;letter-spacing:.4px;padding:9px 16px;border-radius:10px 10px 0 0;border:1px solid var(--line);border-bottom:none;background:var(--surface-2);color:var(--ink-soft)}
+  .ftab .fn{color:var(--ochre);font-weight:600;margin-right:7px}
+  .ftab.on{background:var(--brand);color:#fff}
+  .ftab.on .fn{color:var(--ochre)}
+  .fpanel{display:none;background:var(--surface);border:1px solid var(--line);border-radius:0 14px 14px 14px;padding:24px 26px}
+  .fpanel.on{display:grid;grid-template-columns:1.3fr .9fr;gap:28px;animation:fade .2s ease}
+  .fpanel h3{font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:4px}
+  .fpanel .fpurpose{font-size:13px;color:var(--ink-soft);margin-bottom:14px}
+  .fpanel ul{list-style:none}
+  .fpanel li{font-size:13.5px;line-height:1.45;padding:8px 0 8px 22px;position:relative;border-bottom:1px solid var(--line-2)}
+  .fpanel li:last-child{border-bottom:none}
+  .fpanel li::before{content:"+";position:absolute;left:2px;top:7px;color:var(--ochre);font-weight:800;font-family:var(--mono)}
+  .fpanel li b{font-weight:600}
+  .fside .du{background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:15px 16px}
+  .fside .dlab{font-family:var(--mono);font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ochre);font-weight:600;margin-bottom:9px}
+  .fside .drow{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--line-2);font-size:12px;line-height:1.4}
+  .fside .drow:last-child{border-bottom:none}
+  .fside .dk{font-family:var(--mono);font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-faint);width:74px;flex:0 0 74px;padding-top:1px}
+  .fside .dk.no{color:var(--red)}
+  .fside .anchors{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+  .fside .anchors .a{font-family:var(--mono);font-size:9.5px;color:var(--brand);background:var(--surface);border:1px solid var(--line);padding:3px 7px;border-radius:6px}
+
+  /* ---- landing: testimonials ---- */
+  .ltest{max-width:1180px;margin:0 auto;padding:26px 40px 10px}
+  .ltest h2{font-family:var(--display);font-size:22px;font-weight:600;margin-bottom:4px}
+  .ltest .tnote{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .tcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px;display:flex;flex-direction:column}
+  .tcard .quote{font-family:var(--display);font-size:15px;line-height:1.5;font-style:italic;color:var(--ink)}
+  .tcard .quote::before{content:"\201C";color:var(--ochre);font-size:30px;line-height:0;vertical-align:-12px;margin-right:2px}
+  .tcard .by{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:16px}
+  .tcard .ta{width:34px;height:34px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 auto}
+  .tcard .tn{font-size:12.5px;font-weight:600}
+  .tcard .tr{font-size:11px;color:var(--ink-faint)}
+
+  /* ---- AUTH ---- */
+  #auth{display:none;min-height:100vh;background:var(--brand)}
+  #auth.show{display:grid;grid-template-columns:1fr 1fr}
+  #auth .brandside{padding:54px 56px;color:#fff;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+  #auth .brandside .glow{position:absolute;left:-60px;bottom:-60px;width:220px;height:220px;background:var(--ochre);opacity:.16;border-radius:50%}
+  #auth .brandside .logo .name{font-size:26px}
+  #auth .brandside h2{font-family:var(--display);font-size:34px;font-weight:700;line-height:1.05;margin:24px 0 14px}
+  #auth .brandside h2 .o{color:var(--ochre)}
+  #auth .brandside p{font-size:14px;color:#bcd3ca;max-width:38ch;line-height:1.55}
+  #auth .brandside .pts{margin-top:22px;display:flex;flex-direction:column;gap:10px}
+  #auth .brandside .pt{display:flex;gap:10px;font-size:13px;color:#cfe0d8}
+  #auth .brandside .pt .t{width:18px;height:18px;border-radius:50%;background:var(--ochre);color:#231405;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:0 0 auto}
+  #auth .formside{background:var(--canvas);display:flex;align-items:center;justify-content:center;padding:40px}
+  #auth .formcard{width:100%;max-width:380px}
+  #auth .ftoggle{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:22px}
+  #auth .ftoggle button{flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+  #auth .ftoggle button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  #auth h3{font-family:var(--display);font-size:22px;font-weight:600;margin-bottom:4px}
+  #auth .ah-sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:18px}
+  #auth .afield{margin-bottom:13px}
+  #auth .afield.reg-only{display:none}
+  #auth.reg .afield.reg-only{display:block}
+  #auth label{font-family:var(--mono);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:5px}
+  #auth input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 13px;font-size:13px;background:var(--surface)}
+  #auth .demo-note{font-size:11px;color:var(--ink-faint);margin-top:14px;text-align:center}
+  #auth .backsite{display:block;text-align:center;margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+  #auth .signin-label{display:inline}#auth.reg .signin-label{display:none}
+  #auth .reg-label{display:none}#auth.reg .reg-label{display:inline}
+
+  /* ---- data utilisation strip ---- */
+  .datause{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-top:14px;background:var(--surface)}
+  .datause .d{flex:1 1 25%;min-width:170px;padding:12px 15px;border-right:1px solid var(--line)}
+  .datause .d:last-child{border-right:none}
+  .datause .dl{font-family:var(--mono);font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-faint)}
+  .datause .d.no .dl{color:var(--red)}
+  .datause .dv{font-size:12px;margin-top:4px;line-height:1.4;font-weight:500}
+
+  /* ---- guided demo ---- */
+  #demoLaunch{position:fixed;right:22px;bottom:22px;z-index:70;background:var(--ochre);color:#231405;font-weight:700;font-size:12.5px;padding:11px 16px;border-radius:30px;box-shadow:0 8px 24px rgba(0,0,0,.22);display:none;align-items:center;gap:8px}
+  #demoLaunch.show{display:inline-flex}
+  #demo{position:fixed;right:22px;bottom:22px;width:312px;background:var(--surface);border:1px solid rgba(24,26,23,.3);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);z-index:71;display:none;overflow:hidden}
+  #demo.show{display:block;animation:fade .2s ease}
+  #demo .dh{background:var(--brand);color:#fff;padding:13px 16px;display:flex;align-items:center;gap:8px}
+  #demo .dh .dt{font-family:var(--display);font-weight:600;font-size:15px}
+  #demo .dh .ds{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--ochre);text-transform:uppercase}
+  #demo .dh .x{margin-left:auto;color:#cfe0d8;font-size:18px;line-height:1}
+  #demo .dsteps{max-height:46vh;overflow-y:auto;padding:8px}
+  #demo .step{display:flex;gap:11px;padding:10px;border-radius:10px;cursor:pointer;transition:background .12s;text-align:left;width:100%}
+  #demo .step:hover{background:var(--surface-2)}
+  #demo .step .num{width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-family:var(--mono);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  #demo .step.done .num{background:var(--green)}
+  #demo .step .st{font-size:12.5px;font-weight:600;line-height:1.25}
+  #demo .step .sd{font-size:11px;color:var(--ink-soft);margin-top:2px;line-height:1.35}
+  #demo .dfoot{padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  #demo .dfoot .rst{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft)}
+  @media(max-width:560px){#demo{right:12px;left:12px;width:auto;bottom:12px}#demoLaunch{right:12px;bottom:12px}.fpanel.on,.tgrid{grid-template-columns:1fr}#auth.show{grid-template-columns:1fr}#auth .brandside{display:none}.datause .d{flex-basis:50%}}
+  .shero{padding:4px 0 16px;border-bottom:1px solid var(--line);margin-bottom:16px}
+  .shero .sk{font-family:var(--mono);font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--ochre);font-weight:600}
+  .shero .stitle{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:8px 0 8px}
+  .shero h2.big{font-family:var(--display);font-size:clamp(28px,3.6vw,40px);font-weight:700;letter-spacing:-.4px;line-height:1}
+  .shero .why{font-size:15px;color:var(--ink-soft);max-width:70ch;line-height:1.5}
+  .shero .act{margin-left:auto}
+  .afield select{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font-size:13.5px;background:var(--surface);font-family:var(--ui);color:var(--ink)}
+  .rwiz-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+  .rwiz-step{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);letter-spacing:.3px}
+  .rwiz-prog{display:flex;gap:6px;margin:12px 0 16px}
+  .rwiz-prog i{flex:1;height:4px;border-radius:3px;background:var(--line)}
+  .rwiz-prog i.on{background:var(--ochre)}
+  .rwstep{display:none}
+  .rwstep.on{display:block;animation:fade .2s ease}
+  .rwnav{margin-top:6px}
+  .rwnav.two{display:flex;gap:10px}
+  .rwhint{font-size:11px;color:var(--ink-faint);margin-top:10px;line-height:1.45}
+  .jchips{display:flex;flex-wrap:wrap;gap:7px}
+  .jchip{font-family:var(--mono);font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);transition:all .12s}
+  .jchip:hover{border-color:var(--brand)}
+  .jchip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .rconsent{display:flex;gap:9px;align-items:flex-start;font-size:11.5px;color:var(--ink-soft);background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin:6px 0}
+  .rconsent input{margin-top:2px}
+  .fsublist{font-size:13px;color:var(--ink-soft);margin-bottom:14px}
+  .lfeat .fpanel.on{border-radius:14px}
+  .lfeat .fpanel + .fpanel{margin-top:16px}
+  .lfeat .fpanel h3{display:flex;align-items:baseline;gap:10px}
+  .lfeat .fpanel h3::before{content:attr(data-n);font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ochre)}
+</style>
 </head>
 <body>
-  <header class="hero">
-    <h1>Remit Platform</h1>
-    <p>Employer-side workforce-flexibility governance. No activity surveillance. Decision, duty and outcomes only.</p>
-    <div class="hero-actions">
-      <button id="refresh-all" type="button">Refresh data</button>
-      <span id="last-sync">Not synced yet.</span>
+
+<!-- ============ LANDING ============ -->
+<div id="landing">
+  <div class="ltop">
+    <div class="logo" style="cursor:default"><div class="mark"></div><div class="name">Remit<span class="tm">®</span></div></div>
+    <div class="sp"><span class="lnav">WORKFORCE-FLEXIBILITY GOVERNANCE</span><button class="btn" onclick="showAuth('signin')">Sign in →</button></div>
+  </div>
+  <div class="lhero">
+    <div>
+      <div class="eyebrow">For General Counsel &amp; Heads of People</div>
+      <h1>Work from home,<br><span class="o">governed.</span></h1>
+      <p>The employer-side system for the era when flexible work stops being a favour and becomes a legal right. Grant, refuse, document and defend every decision — and discharge the duties a distributed workforce creates.</p>
+      <div class="cta"><button class="btn lg" onclick="showAuth('register')">Get started →</button><button class="btn ghost" onclick="startDemoFlow()">Open platform</button></div>
     </div>
-  </header>
-
-  <main class="layout">
-    <section class="card">
-      <h2>Organisation status</h2>
-      <p><strong>Health:</strong> <span id="health-status">—</span></p>
-      <p><strong>Organisation:</strong> <span id="health-org">—</span></p>
-      <p><strong>Jurisdictions:</strong> <span id="jurisdictions">—</span></p>
-    </section>
-
-    <section class="card">
-      <h2>Create work-from-home request</h2>
-      <form id="create-request-form" class="stack">
-        <label>Employee
-          <input name="employee" required placeholder="Jordan Wells">
-        </label>
-        <label>Role
-          <input name="role" required placeholder="Account Manager · Client Advisory">
-        </label>
-        <label>Jurisdiction
-          <select name="jurisdiction" required>
-            <option value="VIC">VIC</option>
-            <option value="NSW">NSW</option>
-            <option value="QLD">QLD</option>
-            <option value="WA">WA</option>
-            <option value="SA">SA</option>
-            <option value="TAS">TAS</option>
-            <option value="ACT">ACT</option>
-            <option value="NT">NT</option>
-          </select>
-        </label>
-        <label>Requested days
-          <input name="days" required placeholder="2 days">
-        </label>
-        <label>Pattern
-          <input name="pattern" required placeholder="Mon & Tue">
-        </label>
-        <button type="submit">Create request</button>
-      </form>
-    </section>
-
-    <section class="card span-2">
-      <h2>WFH requests</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Employee</th>
-              <th>Role</th>
-              <th>Jurisdiction</th>
-              <th>Status</th>
-              <th>Consistency</th>
-            </tr>
-          </thead>
-          <tbody id="requests-body"></tbody>
-        </table>
+    <div class="lcard-art">
+      <div class="glow"></div>
+      <div class="mini">What Remit captures</div>
+      <div class="mh">The decision, not the worker.</div>
+      <div class="lminirow"><span class="tick">✓</span>Defensible, consistent WFH decisions</div>
+      <div class="lminirow"><span class="tick">✓</span>Adverse-action &amp; discrimination guardrails</div>
+      <div class="lminirow"><span class="tick">✓</span>Psychosocial &amp; WHS duty, discharged</div>
+      <div class="lminirow"><span class="tick">✓</span>Audit-grade record, dispute-ready</div>
+    </div>
+  </div>
+  <div class="lwhy">
+    <div class="band">
+      <div class="wlab">Why Remit</div>
+      <h2>Flexible work is becoming a legal right — and employers have no system built for it.</h2>
+      <p>Victoria is legislating a statutory right to work from home; the right to disconnect and a positive psychosocial-safety duty already apply nationally. Every WFH decision is now a documented legal event, yet most are managed in email threads and spreadsheets. Surveillance "bossware" answers the wrong question, damages trust, and is increasingly unlawful. Remit is the opposite: it records the <b>employer's</b> decisions and duties — so they're consistent, defensible and discharged — instead of watching the employee.</p>
+      <div class="wstats">
+        <div class="ws"><div class="wn">1 Sep 2026</div><div class="wt">Victorian right-to-WFH commences</div></div>
+        <div class="ws"><div class="wn">Every state</div><div class="wt">Psychosocial-safety duty now enforceable</div></div>
+        <div class="ws"><div class="wn">42%</div><div class="wt">of monitored staff plan to leave within a year</div></div>
       </div>
-      <p class="help">Select a request row to run assessment, distinguish a flag, make a decision, and generate the letter.</p>
-    </section>
+    </div>
+  </div>
 
-    <section class="card">
-      <h2>Selected request workflow</h2>
-      <h3 id="selected-request-title">No request selected</h3>
-      <pre id="selected-request-json">Select a request to inspect details.</pre>
+  <div class="lfeat">
+    <div class="fhd"><div><h2>Critical features</h2><div class="fsub">Three streams, one platform — each with the data it draws on and the law it secures.</div></div></div>
+    <div class="fsublist">All three streams, shown in full — each with the data it draws on and the law it secures.</div>
 
-      <div class="stack">
-        <label>Assessment factors (JSON array)
-          <textarea id="assessment-json" rows="6"></textarea>
-        </label>
-        <button id="run-assessment" type="button">Run assessment</button>
+    <div class="fpanel on" id="fp-g">
+      <div>
+        <h3 data-n="01">WFH Governance</h3>
+        <div class="fpurpose">A request-to-record engine that makes every flexible-work decision consistent and defensible.</div>
+        <ul>
+          <li><b>Structured request intake &amp; role-suitability assessment</b> — reasoning captured before the decision.</li>
+          <li><b>Consistency check</b> — flags adverse-action and discrimination risk against prior decisions <i>before</i> a refusal ships.</li>
+          <li><b>Controlled-vocabulary refusal grounds</b> — no free-text legal exposure.</li>
+          <li><b>Counsel-approved decision letters</b>, auto-assembled per jurisdiction.</li>
+          <li><b>Jurisdiction engine</b> — EO Act (Vic) vs Fair Work pathways, parameterised across states.</li>
+          <li><b>Timestamped audit trail</b> — a 7-year, exportable dispute file.</li>
+        </ul>
+      </div>
+      <div class="fside">
+        <div class="du"><div class="dlab">Data utilisation</div>
+          <div class="drow"><span class="dk">Reads</span><span>Role &amp; employment data (HRIS / Employment Hero); prior decision records</span></div>
+          <div class="drow"><span class="dk">Derives</span><span>Suitability profile, consistency flags, decision &amp; letter</span></div>
+          <div class="drow"><span class="dk no">Never</span><span>Keystrokes, screenshots, content</span></div>
+          <div class="drow"><span class="dk">Keeps</span><span>7 years (Fair Work)</span></div>
+        </div>
+        <div class="anchors"><span class="a">Fair Work Act s 65</span><span class="a">EO Act 2010 (Vic)</span><span class="a">FW Act Pt 3-1</span><span class="a">Anti-discrimination Acts</span></div>
+      </div>
+    </div>
+
+    <div class="fpanel on" id="fp-w">
+      <div>
+        <h3 data-n="02">Wellbeing &amp; WHS</h3>
+        <div class="fpurpose">Discharge the psychosocial and ergonomic duty for distributed staff — and prove it.</div>
+        <ul>
+          <li><b>Hazard register</b> with full duty-discharge records per hazard.</li>
+          <li><b>Hierarchy-of-controls workflow</b> — higher-order first; training never the sole control (VIC rule).</li>
+          <li><b>Aggregate, consent-based signals</b> — after-hours index &amp; pulse at team level, never individual surveillance.</li>
+          <li><b>HSR / worker consultation</b> recorded against each hazard.</li>
+          <li><b>Scheduled &amp; triggered control reviews</b> with a control log.</li>
+          <li><b>Right-to-disconnect adherence</b> monitoring.</li>
+        </ul>
+      </div>
+      <div class="fside">
+        <div class="du"><div class="dlab">Data utilisation</div>
+          <div class="drow"><span class="dk">Reads</span><span>Home-WHS self-assessments; consented calendar metadata (aggregate); team pulse</span></div>
+          <div class="drow"><span class="dk">Derives</span><span>Hazard register, after-hours index, control log</span></div>
+          <div class="drow"><span class="dk no">Never</span><span>Individual activity or individual scores</span></div>
+          <div class="drow"><span class="dk">Keeps</span><span>WHS record standard</span></div>
+        </div>
+        <div class="anchors"><span class="a">OHS Act 2004 + Psych Health Regs 2025 (Vic)</span><span class="a">Model WHS Acts + Codes</span><span class="a">NSW Digital Work Systems Act 2026</span><span class="a">FW Act s 333M</span></div>
+      </div>
+    </div>
+
+    <div class="fpanel on" id="fp-o">
+      <div>
+        <h3 data-n="03">Outcome Contracts</h3>
+        <div class="fpurpose">The legitimate answer to "is the work getting done?" — output as the proxy, not presence.</div>
+        <ul>
+          <li><b>Co-set deliverable contracts</b>, visible to both sides.</li>
+          <li><b>Delivery signals</b> from tools already in use (Jira / CRM / Asana / tickets).</li>
+          <li><b>Lawful-performance framing</b> — defensible, procedurally fair records.</li>
+          <li><b>Cycle reviews</b> with sign-off and retention.</li>
+          <li><b>Privacy by design</b> — APP-grade, zero activity capture, no third-party sharing.</li>
+        </ul>
+      </div>
+      <div class="fside">
+        <div class="du"><div class="dlab">Data utilisation</div>
+          <div class="drow"><span class="dk">Reads</span><span>Delivery state from Jira / CRM / Asana / tickets</span></div>
+          <div class="drow"><span class="dk">Derives</span><span>Outcome contracts, delivery signals, cycle reviews</span></div>
+          <div class="drow"><span class="dk no">Never</span><span>Keystrokes, screenshots, activity</span></div>
+          <div class="drow"><span class="dk">Keeps</span><span>7 years (Fair Work)</span></div>
+        </div>
+        <div class="anchors"><span class="a">FW Act Pt 3-1 &amp; Pt 3-2</span><span class="a">Privacy Act 1988 (APPs)</span><span class="a">Workplace surveillance regimes</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ltest">
+    <h2>Workforce governance outcomes</h2>
+    <div class="tnote">Representative outcomes for governance-led deployment.</div>
+    <div class="tgrid">
+      <div class="tcard"><div class="quote">The first time VEOHRC asked for a file, we exported it in a click instead of reconstructing six months of email. That alone paid for it.</div><div class="by"><div class="ta">GC</div><div><div class="tn">General Counsel</div><div class="tr">Professional services · VIC</div></div></div></div>
+      <div class="tcard"><div class="quote">It caught two refusals that were inconsistent with approvals we'd already given. We'd have walked straight into adverse-action claims.</div><div class="by"><div class="ta">HP</div><div><div class="tn">Head of People</div><div class="tr">Financial services · multi-state</div></div></div></div>
+      <div class="tcard"><div class="quote">Finally a remote-work tool our people don't hate. It manages the duty without surveilling anyone — and our workers' comp position is genuinely stronger.</div><div class="by"><div class="ta">WH</div><div><div class="tn">WHS &amp; Risk Lead</div><div class="tr">NDIS provider · NSW</div></div></div></div>
+    </div>
+  </div>
+  <div class="linvert">
+    <div class="strip"><div class="q">Bossware watches the <b>employee</b> to reassure the employer. Remit records the <b>employer's</b> decisions and duties to protect the employer — and reduce harm to the employee.</div><button class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="showAuth('register')">See it in action →</button></div>
+  </div>
+  <div class="lfoot">REMIT BY ASKJARVIS · LIVE PLATFORM · NOT LEGAL ADVICE</div>
+</div>
+
+<!-- ============ AUTH ============ -->
+<div id="auth">
+  <div class="brandside">
+    <div class="glow"></div>
+    <div class="logo" style="cursor:default"><div class="mark"></div><div class="name">Remit<span class="tm">®</span></div></div>
+    <h2>Work from home,<br><span class="o">governed.</span></h2>
+    <p>Sign in to continue to your organisation console.</p>
+    <div class="pts">
+      <div class="pt"><span class="t">✓</span>Consistent, defensible WFH decisions</div>
+      <div class="pt"><span class="t">✓</span>Psychosocial &amp; WHS duty, discharged</div>
+      <div class="pt"><span class="t">✓</span>Audit-grade, dispute-ready records</div>
+    </div>
+  </div>
+  <div class="formside">
+    <div class="formcard">
+      <div class="ftoggle"><button id="tg-signin" class="on" onclick="setAuthMode('signin')">Sign in</button><button id="tg-register" onclick="setAuthMode('register')">Create account</button></div>
+
+      <div id="signinBlock">
+        <h3>Welcome back</h3>
+        <div class="ah-sub">Sign in to continue to your organisation console.</div>
+        <div class="afield"><label>Work email</label><input id="si-email" type="email" placeholder="you@company.com.au" autocomplete="off"></div>
+        <div class="afield"><label>Password</label><input id="si-pass" type="password" placeholder="••••••••" autocomplete="off"></div>
+        <button class="btn lg" style="width:100%;margin-top:6px" onclick="enterApp()">Enter console →</button>
       </div>
 
-      <form id="distinguish-form" class="stack">
-        <label>Distinguishing factor (for flagged consistency)
-          <input id="distinguish-factor" required placeholder="Client visits require weekly in-person cadence">
-        </label>
-        <button type="submit">Record distinguishing factor</button>
-      </form>
+      <div id="regBlock" style="display:none">
+        <div class="rwiz-head"><h3 style="margin:0">Create your workspace</h3><div class="rwiz-step">Step <span id="rwiz-n">1</span> of 3</div></div>
+        <div class="rwiz-prog"><i id="rp1" class="on"></i><i id="rp2"></i><i id="rp3"></i></div>
 
-      <form id="decision-form" class="stack">
-        <label>Decision type
-          <select id="decision-type" required>
-            <option value="approved">approved</option>
-            <option value="modified">modified</option>
-            <option value="refused">refused</option>
-          </select>
-        </label>
-        <label>Ground
-          <input id="decision-ground" required placeholder="Consistent with comparable approval">
-        </label>
-        <button type="submit">Apply decision</button>
-      </form>
+        <div class="rwstep on" id="rw1">
+          <div class="ah-sub">Your organisation — Remit configures itself to your business and the law that applies to it.</div>
+          <div class="afield"><label>Registered business name</label><input id="au-org" placeholder="Brightwater Group Pty Ltd" value="Brightwater Group"></div>
+          <div class="afield"><label>ABN</label><input id="au-abn" placeholder="00 000 000 000"></div>
+          <div class="afield"><label>Industry</label><select id="au-ind"><option>Professional services</option><option>Financial services</option><option>Technology</option><option>Health &amp; community</option><option>Retail &amp; consumer</option><option>Construction &amp; property</option><option>Government</option><option>Other</option></select></div>
+          <div class="afield"><label>Total employees</label><select id="au-size"><option>1–14 (small business)</option><option selected>15–49</option><option>50–199</option><option>200–999</option><option>1,000+</option></select></div>
+          <button class="btn lg" style="width:100%;margin-top:4px" onclick="regNext(1)">Continue →</button>
+          <div class="rwhint">Employee count sets your commencement timing — under 15 staff gives a deferred Victorian start of 1 July 2027.</div>
+        </div>
 
-      <button id="load-letter" type="button">Generate letter preview</button>
-      <pre id="letter-output">No letter loaded.</pre>
-    </section>
+        <div class="rwstep" id="rw2">
+          <div class="ah-sub">Where your people work — each state runs its own rule profile, so this drives the engine.</div>
+          <div class="afield"><label>Jurisdictions your staff work in</label><div class="jchips" id="au-jchips"><button type="button" class="jchip on" onclick="tjc(this)">VIC</button><button type="button" class="jchip on" onclick="tjc(this)">NSW</button><button type="button" class="jchip on" onclick="tjc(this)">QLD</button><button type="button" class="jchip on" onclick="tjc(this)">WA</button><button type="button" class="jchip" onclick="tjc(this)">SA</button><button type="button" class="jchip" onclick="tjc(this)">TAS</button><button type="button" class="jchip" onclick="tjc(this)">ACT</button><button type="button" class="jchip" onclick="tjc(this)">NT</button></div></div>
+          <div class="afield"><label>Hybrid / remote staff</label><input id="au-remote" placeholder="e.g. 120"></div>
+          <div class="afield"><label>Current WFH policy</label><select id="au-policy"><option>No formal policy</option><option>Informal / discretionary</option><option>Documented hybrid policy</option></select></div>
+          <div class="rwnav two"><button class="btn ghost" onclick="regBack(2)">← Back</button><button class="btn" style="flex:1" onclick="regNext(2)">Continue →</button></div>
+        </div>
 
-    <section class="card">
-      <h2>WHS hazards</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Review date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="hazards-body"></tbody>
-        </table>
+        <div class="rwstep" id="rw3">
+          <div class="ah-sub">Administrator &amp; sign-in — the decision-owner who governs flexible work and signs off records.</div>
+          <div class="afield"><label>Administrator name</label><input id="au-name" placeholder="Alex Renn"></div>
+          <div class="afield"><label>Role</label><select id="au-role"><option>General Counsel</option><option selected>Head of People</option><option>HR Manager</option><option>People &amp; Culture Lead</option><option>Founder / Director</option></select></div>
+          <div class="afield"><label>Work email</label><input id="au-email" type="email" placeholder="you@company.com.au" autocomplete="off"></div>
+          <div class="afield"><label>Password</label><input id="au-pass" type="password" placeholder="••••••••" autocomplete="off"></div>
+          <div class="afield"><label>HR system (for role &amp; employment data)</label><select id="au-hris"><option>Employment Hero</option><option>ELMO</option><option>HiBob</option><option>BambooHR</option><option>None yet / spreadsheet</option></select></div>
+          <label class="rconsent"><input type="checkbox" id="au-consent"> I confirm Remit is configured as a compliance &amp; record-keeping tool, that its outputs are a scaffold for our own legal sign-off, and that data is held in Australia (APP-grade).</label>
+          <div class="rwnav two"><button class="btn ghost" onclick="regBack(3)">← Back</button><button class="btn" style="flex:1" onclick="createAccount()">Create &amp; enter console →</button></div>
+        </div>
       </div>
-    </section>
 
-    <section class="card">
-      <h2>Outcome contracts</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Employee</th>
-              <th>Period</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="contracts-body"></tbody>
-        </table>
+      <div class="demo-note">Preview mode — sign-in fields are not yet connected to identity services.</div>
+      <a class="backsite" href="#" onclick="backToSite();return false;">‹ Back to site</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app" style="display:none">
+  <aside class="side" id="side">
+    <div class="logo" onclick="exitApp()" title="Back to landing"><div class="mark"></div><div class="name">Remit<span class="tm">®</span></div></div>
+    <div class="org"><div class="lab">Organisation</div><div class="nm">Brightwater Group</div><div class="ju">VIC 58 · NSW 31 · QLD 22 · WA 9</div></div>
+    <nav class="nav" id="nav">
+      <div class="sect">Govern</div>
+      <button data-s="overview" class="active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h8V3H3zM13 21h8V8h-8zM3 21h8v-6H3zM13 3v3h8V3z"/></svg>Overview</button>
+      <button data-s="requests"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8M21 12a9 9 0 11-6.2-8.5"/></svg>WFH Requests<span class="badge" id="nav-badge">4</span></button>
+      <button data-s="whs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Wellbeing &amp; WHS</button>
+      <button data-s="outcomes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Outcomes</button>
+      <div class="sect">Reference</div>
+      <button data-s="compliance"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M9 13h6M9 17h6"/></svg>Compliance Register</button>
+      <button data-s="settings"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 00-1.7-1L14.5 2h-5l-.4 2.6a7 7 0 00-1.7 1l-2.3-1-2 3.4L5.1 11a7 7 0 000 2l-2 1.5 2 3.4 2.3-1a7 7 0 001.7 1L9.5 22h5l.4-2.6a7 7 0 001.7-1l2.3 1 2-3.4-2-1.5a7 7 0 00.1-1z"/></svg>Settings</button>
+    </nav>
+    <div class="side-foot"><div class="u"><div class="av">AR</div><div><div class="un">Alex Renn</div><div class="ur">Head of People &amp; Legal</div></div></div></div>
+  </aside>
+
+  <div class="main">
+    <div class="ribbon"><span class="dot"></span> LIVE PLATFORM · GOVERNANCE WORKFLOW · API-POWERED</div>
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="crumb" id="crumb">Govern / Overview</div><h1 id="title">Overview</h1></div>
+      <div class="sp"><span class="chip">Multi-jurisdiction</span><button class="btn ghost sm" onclick="resetDemo()">↺ Refresh data</button></div>
+    </div>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <section class="screen active" id="screen-overview">
+        <div class="commence">
+          <div class="big" id="countdown">66<small>days</small></div>
+          <div class="txt"><div class="tag">Forcing event · Victoria</div><div class="t1">Right to work from home commences 1 September 2026</div><div class="t2">58 Victorian staff move from policy-based hybrid to a statutory right. Remit's VIC jurisdiction profile is staged and ready; refusal grounds and EO-VIC letter templates are loaded.</div></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="n" id="ov-open">4</div><div class="l">WFH requests open</div><div class="meta" id="ov-open-m">2 awaiting decision</div></div>
+          <div class="stat flag"><div class="n" id="ov-flag">1</div><div class="l">Decisions flagged</div><div class="meta">Consistency risk</div></div>
+          <div class="stat"><div class="n">3</div><div class="l">Open hazards</div><div class="meta">1 review due</div></div>
+          <div class="stat"><div class="n">28</div><div class="l">Outcome contracts</div><div class="meta">All on track</div></div>
+          <div class="stat"><div class="n">96%</div><div class="l">Right-to-disconnect</div><div class="meta">Team adherence</div></div>
+        </div>
+        <div class="grid mt24" style="grid-template-columns:1fr 360px">
+          <div class="card pad">
+            <div class="eyebrow">Action queue</div><div class="h2">Needs your attention</div>
+            <div class="att mt16" id="att-queue"></div>
+          </div>
+          <div class="card pad">
+            <div class="eyebrow">Workforce</div><div class="h2">By jurisdiction</div>
+            <div class="mt16">
+              <div class="jbar"><span class="jn">VIC</span><div class="track"><div class="fill" style="width:90%"></div></div><span class="jv">58</span></div>
+              <div class="jbar"><span class="jn">NSW</span><div class="track"><div class="fill" style="width:48%"></div></div><span class="jv">31</span></div>
+              <div class="jbar"><span class="jn">QLD</span><div class="track"><div class="fill" style="width:34%"></div></div><span class="jv">22</span></div>
+              <div class="jbar"><span class="jn">WA</span><div class="track"><div class="fill" style="width:14%"></div></div><span class="jv">9</span></div>
+            </div>
+            <div class="disclaim">Each jurisdiction runs its own rule profile — WFH framework, WHS scheme and surveillance regime differ by state.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REQUESTS -->
+      <section class="screen" id="screen-requests">
+        <div id="req-list">
+          <div class="shero">
+            <div class="sk">Stream 01 · Governance</div>
+            <div class="stitle"><h2 class="big">WFH Governance</h2><button class="btn sm act" onclick="openNew()">+ New request</button></div>
+            <div class="why">Turn every flexible-work request into a consistent, defensible, recorded decision — before a refusal becomes a claim. Remit governs the request, the role-suitability assessment, the grounds and the letter, then keeps the dispute-ready file.</div>
+          </div>
+          <div class="datause">
+            <div class="d"><div class="dl">Reads</div><div class="dv">HRIS role &amp; employment data · prior decisions</div></div>
+            <div class="d"><div class="dl">Derives</div><div class="dv">Suitability profile · consistency flags · decision &amp; letter</div></div>
+            <div class="d no"><div class="dl">Never captures</div><div class="dv">Keystrokes · screenshots · content</div></div>
+            <div class="d"><div class="dl">Retention</div><div class="dv">7 years (Fair Work)</div></div>
+          </div>
+          <div class="filters" id="filters"></div>
+          <div class="card pad mt16"><table class="tb"><thead><tr><th>Reference</th><th>Employee</th><th>Days</th><th>Jurisdiction</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="req-rows"></tbody></table></div>
+        </div>
+        <div class="detail" id="req-detail"></div>
+      </section>
+
+      <!-- WHS -->
+      <section class="screen" id="screen-whs">
+        <div id="whs-list">
+          <div class="shero">
+            <div class="sk">Stream 02 · Duty of care</div>
+            <div class="stitle"><h2 class="big">Wellbeing &amp; WHS</h2></div>
+            <div class="why">Discharge the psychosocial and ergonomic duty you owe remote staff — and prove you did — without surveilling anyone. Aggregate, consent-based signals and a hierarchy-of-controls record for every hazard.</div>
+          </div>
+          <div class="datause">
+            <div class="d"><div class="dl">Reads</div><div class="dv">Home-WHS assessments · consented metadata (aggregate) · team pulse</div></div>
+            <div class="d"><div class="dl">Derives</div><div class="dv">Hazard register · after-hours index · control log</div></div>
+            <div class="d no"><div class="dl">Never captures</div><div class="dv">Individual activity or scores</div></div>
+            <div class="d"><div class="dl">Retention</div><div class="dv">WHS record standard</div></div>
+          </div>
+          <div class="card pad mt16">
+            <div class="row" style="justify-content:space-between;align-items:center"><div><div class="eyebrow">Hazard register</div><div class="h2">Identified hazards &amp; controls</div></div><span class="mono">Open a hazard to see the duty-discharge record</span></div>
+            <table class="tb mt16"><thead><tr><th>Hazard</th><th>Type</th><th>Control applied</th><th>Jur.</th><th>Review</th><th>Status</th></tr></thead><tbody id="haz-rows"></tbody></table>
+            <div class="ctrlnote">VIC control note: under the OHS (Psychological Health) Regulations 2025, training cannot be the sole control — higher-order controls are recorded against each hazard.</div>
+          </div>
+          <div class="twocol mt16">
+            <div class="card pad"><div class="eyebrow">Aggregate · consent-based</div><div class="h2">After-hours activity index</div><div class="sub">Team-level trend only. No individual is ever named or scored.</div>
+              <div class="minibar mt16"><div class="b" style="height:50%"><span>Mar</span></div><div class="b" style="height:62%"><span>Apr</span></div><div class="b hi" style="height:78%"><span>May</span></div><div class="b" style="height:44%"><span>Jun</span></div></div>
+              <div class="legend">May spike triggered the Q3 workload hazard control. Index falling since.</div>
+            </div>
+            <div class="card pad"><div class="eyebrow">Pulse · team trend</div><div class="h2">Connection &amp; load</div>
+              <div class="mt16"><div class="kv"><span class="k">Connection score (team avg)</span><span class="v">7.2 / 10 ▲ 0.3</span></div><div class="kv"><span class="k">Workload sustainability</span><span class="v">6.8 / 10 ▲ 0.5</span></div><div class="kv"><span class="k">Right-to-disconnect adherence</span><span class="v">96%</span></div><div class="kv"><span class="k">Home WHS assessments complete</span><span class="v">112 / 120</span></div></div>
+              <div class="ctrlnote">Pulse instruments report at team level. Individual responses are never exposed to managers.</div>
+            </div>
+          </div>
+        </div>
+        <div class="detail" id="whs-detail"></div>
+      </section>
+
+      <!-- OUTCOMES -->
+      <section class="screen" id="screen-outcomes">
+        <div id="out-list">
+          <div class="shero">
+            <div class="sk">Stream 03 · Output, not presence</div>
+            <div class="stitle"><h2 class="big">Outcome Contracts</h2></div>
+            <div class="why">Answer "is the work getting done?" by output, not presence — defensibly, and with zero activity capture. Agreed deliverables and delivery signals from the tools you already run.</div>
+          </div>
+          <div class="datause">
+            <div class="d"><div class="dl">Reads</div><div class="dv">Delivery state from Jira / CRM / Asana / tickets</div></div>
+            <div class="d"><div class="dl">Derives</div><div class="dv">Outcome contracts · delivery signals · cycle reviews</div></div>
+            <div class="d no"><div class="dl">Never captures</div><div class="dv">Keystrokes · screenshots · activity</div></div>
+            <div class="d"><div class="dl">Retention</div><div class="dv">7 years (Fair Work)</div></div>
+          </div>
+          <div class="card pad mt16"><table class="tb"><thead><tr><th>Employee</th><th>Period</th><th>Agreed outcomes</th><th>Delivery signal</th><th>Status</th></tr></thead><tbody id="out-rows"></tbody></table></div>
+        </div>
+        <div class="detail" id="out-detail"></div>
+      </section>
+
+      <!-- COMPLIANCE -->
+      <section class="screen" id="screen-compliance">
+        <div class="eyebrow">Reference · the jurisdiction engine</div><div class="h2">Compliance register</div>
+        <div class="sub">The per-jurisdiction rule profiles that drive every decision, control and record. Scaffold for counsel — verify before reliance.</div>
+        <div class="jcards mt16">
+          <div class="card pad jcard"><div class="jh"><span class="jbig">VIC</span><span class="pill flagged">Non-harmonised</span></div>
+            <div class="jrow"><span class="jk">WFH</span><span class="jval"><b>Equal Opportunity Act 2010 (Vic)</b> — statutory right (Bill, commences 1 Sep 2026). Disputes → VEOHRC → VCAT.</span></div>
+            <div class="jrow"><span class="jk">WHS</span><span class="jval"><b>OHS Act 2004 + OHS (Psychological Health) Regs 2025</b> — in force; modified hierarchy; training not sole control.</span></div>
+            <div class="jrow"><span class="jk">Surveil.</span><span class="jval"><b>Surveillance Devices Act 1999 (Vic)</b> — reform on horizon.</span></div></div>
+          <div class="card pad jcard"><div class="jh"><span class="jbig">NSW</span><span class="pill modified">Model WHS+</span></div>
+            <div class="jrow"><span class="jk">WFH</span><span class="jval"><b>Fair Work Act 2009 (Cth) s 65</b> — right to request; FWC disputes.</span></div>
+            <div class="jrow"><span class="jk">WHS</span><span class="jval"><b>WHS Act 2011 + WHS Reg 2025</b>; <b>Digital Work Systems Act 2026</b> — algorithmic monitoring duty; s 26A from 1 Jul 2026.</span></div>
+            <div class="jrow"><span class="jk">Surveil.</span><span class="jval"><b>Workplace Surveillance Act 2005 (NSW)</b> — 14 days' notice; dedicated regime.</span></div></div>
+          <div class="card pad jcard"><div class="jh"><span class="jbig">QLD</span><span class="pill approved">Model WHS</span></div>
+            <div class="jrow"><span class="jk">WFH</span><span class="jval"><b>Fair Work Act 2009 (Cth) s 65</b> — right to request.</span></div>
+            <div class="jrow"><span class="jk">WHS</span><span class="jval"><b>WHS Act 2011 + Psychosocial Risks Amendment Reg 2022</b> — most prescriptive Code.</span></div>
+            <div class="jrow"><span class="jk">Surveil.</span><span class="jval"><b>Invasion of Privacy Act 1971 (Qld)</b> — no dedicated workplace regime; consent + notice.</span></div></div>
+          <div class="card pad jcard"><div class="jh"><span class="jbig">WA</span><span class="pill approved">Model WHS</span></div>
+            <div class="jrow"><span class="jk">WFH</span><span class="jval"><b>Fair Work Act 2009 (Cth) s 65</b> — right to request.</span></div>
+            <div class="jrow"><span class="jk">WHS</span><span class="jval"><b>WHS Act 2020 + WHS (General) Regs 2022</b> — psychosocial Code.</span></div>
+            <div class="jrow"><span class="jk">Surveil.</span><span class="jval"><b>Surveillance Devices Act 1998 (WA)</b> — strict on personal-use monitoring.</span></div></div>
+        </div>
+        <div class="card pad mt16"><div class="eyebrow">Roadmap signals</div><div class="h2">Live reform watch</div>
+          <div class="mt16">
+            <div class="watchrow"><span class="wd">1 Jul 2026</span><span class="ww"><b>NSW WHS s 26A</b> — Codes of Practice become enforceable benchmarks.</span></div>
+            <div class="watchrow"><span class="wd">1 Sep 2026</span><span class="ww"><b>VIC right to WFH</b> — proposed commencement, if the Bill passes (small business 1 Jul 2027).</span></div>
+            <div class="watchrow"><span class="wd">10 Dec 2026</span><span class="ww"><b>Privacy ADM transparency</b> — automated-decision disclosure obligations commence.</span></div>
+            <div class="watchrow"><span class="wd">2026 →</span><span class="ww"><b>Privacy Act tranche 2</b> — expected to narrow the employee-records exemption.</span></div>
+          </div>
+          <div class="disclaim">Instruments and dates compiled to June 2026. The Victorian WFH right is a Bill, not an Act. Scaffold for qualified Australian counsel, not legal advice.</div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="screen" id="screen-settings">
+        <div class="eyebrow">Configuration</div><div class="h2">Settings</div><div class="sub">Organisation profile, integrations and data posture.</div>
+        <div class="twocol mt16">
+          <div class="card pad"><div class="eyebrow">Integrations</div><div class="h2">Connected systems</div>
+            <div class="mt16"><div class="kv"><span class="k">Employment Hero (HRIS)</span><span class="v" style="color:var(--green)">● Connected</span></div><div class="kv"><span class="k">Jira / Asana (delivery signals)</span><span class="v" style="color:var(--green)">● Connected</span></div><div class="kv"><span class="k">CRM (outcome signals)</span><span class="v" style="color:var(--green)">● Connected</span></div><div class="kv"><span class="k">Calendar metadata (boundary signals)</span><span class="v" style="color:var(--ink-faint)">○ Aggregate only</span></div></div>
+            <div class="ctrlnote">Remit reads role and employment data from your HRIS, and delivery state from your tools. It does not capture content, keystrokes or screenshots.</div>
+          </div>
+          <div class="card pad"><div class="eyebrow">Data posture</div><div class="h2">Privacy by design</div>
+            <div class="mt16"><div class="kv"><span class="k">Personal data standard</span><span class="v">APP-grade</span></div><div class="kv"><span class="k">Signal granularity</span><span class="v">Aggregate / team-level</span></div><div class="kv"><span class="k">Third-party data sharing</span><span class="v" style="color:var(--green)">None</span></div><div class="kv"><span class="k">Record retention</span><span class="v">7 years (Fair Work)</span></div><div class="kv"><span class="k">Data residency</span><span class="v">Australia</span></div></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="New work-from-home request">
+    <div class="mh"><h3>New work-from-home request</h3><button class="x" onclick="closeNew()" aria-label="Close">×</button></div>
+    <div class="mb">
+      <div class="field"><label>Employee name</label><input id="nf-name" placeholder="e.g. Jordan Wells"></div>
+      <div class="field"><label>Role</label><input id="nf-role" placeholder="e.g. Account Manager · Client Advisory"></div>
+      <div class="row" style="gap:12px">
+        <div class="field" style="flex:1"><label>Jurisdiction</label><select id="nf-jur"><option>VIC</option><option>NSW</option><option>QLD</option><option>WA</option></select></div>
+        <div class="field" style="flex:1"><label>Days / week</label><select id="nf-days"><option>1 day</option><option selected>2 days</option><option>3 days</option></select></div>
       </div>
-    </section>
+      <div class="field"><label>Proposed pattern</label><input id="nf-pat" placeholder="e.g. Mon & Tue"></div>
+    </div>
+    <div class="mf"><button class="btn ghost" onclick="closeNew()">Cancel</button><button class="btn" onclick="submitNew()">Create request</button></div>
+  </div>
+</div>
 
-    <section class="card span-2">
-      <h2>Activity log</h2>
-      <pre id="activity-log">Platform not yet initialised.</pre>
-    </section>
-  </main>
+<!-- guided demo -->
+<button id="demoLaunch" onclick="openDemo()">✦ Quick actions</button>
+<div id="demo">
+  <div class="dh"><div><div class="dt">Quick actions</div><div class="ds">Quick actions</div></div><button class="x" onclick="closeDemo()" aria-label="Close">−</button></div>
+  <div class="dsteps" id="demo-steps"></div>
+  <div class="dfoot"><span class="rst">Reload data from API</span><button class="btn ghost sm" onclick="resetDemo()">↺ Refresh</button></div>
+</div>
 
-  <script type="module" src="/app.js"></script>
+<div id="toast"><span class="td"></span><span id="toast-msg"></span></div>
+
+<script type="module" src="/app.js"></script>
 </body>
 </html>
