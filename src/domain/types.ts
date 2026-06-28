@@ -56,6 +56,12 @@ export interface PriorDecision {
 }
 
 export interface Control { tier: ControlTier; text: string; primary?: boolean; }
+export interface HazardReview {
+  at: string;
+  reviewer: string;
+  finding: string;
+  nextReviewDate: string;
+}
 
 export interface Hazard {
   id: string;
@@ -67,10 +73,17 @@ export interface Hazard {
   triggers: string[];
   status: HazardStatus;
   reviewDate: string;
+  reviews: HazardReview[];
   audit: AuditEvent[];
 }
 
 export interface Outcome { text: string; state: OutcomeState; }
+export interface OutcomeCycleReview {
+  reviewerName: string;
+  summary: string;
+  signedOff: boolean;
+  reviewedAt: string;
+}
 
 export interface OutcomeContract {
   id: string;
@@ -80,5 +93,6 @@ export interface OutcomeContract {
   outcomes: Outcome[];
   signalSource: string;   // e.g. 'CRM' | 'Jira' — delivery state only, never activity
   status: ContractStatus;
+  cycleReviews: OutcomeCycleReview[];
   audit: AuditEvent[];
 }

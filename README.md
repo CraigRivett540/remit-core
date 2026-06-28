@@ -11,6 +11,7 @@ a **service layer**, a **REST API**, and a **CLI**, all fully typed and tested.
 ```bash
 npm install
 npm run prisma:generate   # generate Prisma client (required for Prisma backend mode)
+npm run prisma:migrate    # local development migration apply (requires DATABASE_URL)
 npm run check     # strict typecheck + 25 Vitest tests
 npm run demo      # runs the full governance loop in your terminal
 npm start         # Remit API + web console on http://localhost:4000  (PORT=xxxx to change)
@@ -32,10 +33,17 @@ POST /api/requests/:id/assessment          {factors:[...]}     -> runs consisten
 POST /api/requests/:id/distinguish         {factor:"..."}      -> unlocks refusal
 POST /api/requests/:id/decision            {type,ground}       -> 409 if guardrail blocks
 GET  /api/requests/:id/letter
-GET  /api/hazards?limit=10&offset=0        GET /api/hazards/:id/validation    POST /api/hazards/:id/review
-GET  /api/contracts?limit=10&offset=0      POST /api/contracts/:id/review
+GET  /api/hazards?limit=10&offset=0        POST /api/hazards
+PATCH /api/hazards/:id                     GET /api/hazards/:id/validation
+POST /api/hazards/:id/review               {nextReviewDate,finding,reviewer}
+GET  /api/contracts?limit=10&offset=0      POST /api/contracts
+PATCH /api/contracts/:id/outcomes          {outcomes:[{text,state}]}
+POST /api/contracts/:id/review             {reviewerName,summary,signedOff}
+GET  /api/reports/summary
 ```
-Protected API routes (`/api/requests*`, `/api/hazards*`, `/api/contracts*`) require `x-org-id` header.
+Protected API routes (`/api/requests*`, `/api/hazards*`, `/api/contracts*`, `/api/reports*`) require `x-org-id` header.
+Mutation/report endpoints additionally require actor headers: `x-user-id` and `x-user-role`
+(`ADMIN`, `ASSESSOR`, `DECISION_MAKER`, `WHS_LEAD`, `MANAGER`, `VIEWER`).
 List endpoints return a pagination envelope:
 `{ items: [...], page: { limit, offset, total, hasNext, hasPrev } }`.
 The consistency guardrail returns **HTTP 409** when you try to refuse/modify a flagged request.
@@ -44,6 +52,8 @@ The consistency guardrail returns **HTTP 409** when you try to refuse/modify a f
 - Default: in-memory store (`src/store/memory.ts`).
 - Prisma mode: set `REMIT_STORE_BACKEND=prisma` and `DATABASE_URL=postgres://...`.
   On first run, Remit seeds the configured org (`REMIT_ORG_ID`, defaults to `org_brightwater`) into Prisma.
+- Strict persistence mode: set `REMIT_STORE_STRICT=true` to fail startup if Prisma is unavailable.
+  In non-strict mode, `/api/health` reports `backendFallbackReason` when runtime falls back to memory.
 
 ## Web console
 Open `http://localhost:4000` after `npm start` to use the live platform UI.

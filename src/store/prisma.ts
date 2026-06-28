@@ -362,13 +362,14 @@ async function loadStore(client: PrismaClient): Promise<Store> {
       include: {
         controls: true,
         consultation: { orderBy: { consultedAt: 'asc' } },
+        reviews: { include: { reviewedBy: true }, orderBy: { reviewedAt: 'asc' } },
         triggers: true,
         audit: { orderBy: { at: 'asc' } },
       },
     }),
     client.outcomeContract.findMany({
       where: { org: org.id },
-      include: { employee: true, outcomes: true, audit: { orderBy: { at: 'asc' } } },
+      include: { employee: true, outcomes: true, reviews: { orderBy: { reviewedAt: 'asc' } }, audit: { orderBy: { at: 'asc' } } },
     }),
   ]);
 
@@ -400,6 +401,12 @@ async function loadStore(client: PrismaClient): Promise<Store> {
     triggers: row.triggers.map((trigger) => trigger.label),
     status: toHazardStatus(row.status),
     reviewDate: row.reviewDate.toISOString().slice(0, 10),
+    reviews: row.reviews.map((review) => ({
+      at: review.reviewedAt.toISOString(),
+      reviewer: review.reviewedBy.name,
+      finding: review.finding,
+      nextReviewDate: row.reviewDate.toISOString().slice(0, 10),
+    })),
     audit: row.audit.map((entry) => ({ at: entry.at.toISOString(), event: entry.event })),
   }));
 
@@ -414,6 +421,12 @@ async function loadStore(client: PrismaClient): Promise<Store> {
     })),
     signalSource: row.signalSource,
     status: toContractStatus(row.status),
+    cycleReviews: row.reviews.map((review) => ({
+      reviewerName: review.reviewerName,
+      summary: review.summary,
+      signedOff: review.signedOff,
+      reviewedAt: review.reviewedAt.toISOString(),
+    })),
     audit: row.audit.map((entry) => ({ at: entry.at.toISOString(), event: entry.event })),
   }));
 
@@ -662,6 +675,15 @@ async function persistStore(client: PrismaClient, store: Store): Promise<void> {
           consultation: hazard.consultation
             ? { create: [{ views: hazard.consultation, workersConsulted: true }] }
             : undefined,
+          reviews: hazard.reviews.length > 0
+            ? {
+                create: hazard.reviews.map((review) => ({
+                  reviewerId: systemUsers.reviewer,
+                  finding: review.finding,
+                  reviewedAt: asDate(review.at),
+                })),
+              }
+            : undefined,
         },
       });
 
@@ -702,6 +724,16 @@ async function persistStore(client: PrismaClient, store: Store): Promise<void> {
               status: fromOutcomeState(outcome.state),
             })),
           },
+          reviews: contract.cycleReviews.length > 0
+            ? {
+                create: contract.cycleReviews.map((review) => ({
+                  reviewerName: review.reviewerName,
+                  summary: review.summary,
+                  signedOff: review.signedOff,
+                  reviewedAt: asDate(review.reviewedAt),
+                })),
+              }
+            : undefined,
         },
       });
 
@@ -721,23 +753,29 @@ async function persistStore(client: PrismaClient, store: Store): Promise<void> {
   });
 }
 
-export async function createPrismaStoreRuntime(): Promise<StoreRuntime | null> {
+export interface PrismaRuntimeAttempt {
+  runtime: StoreRuntime | null;
+  reason?: string;
+}
+
+export async function createPrismaStoreRuntime(): Promise<PrismaRuntimeAttempt> {
   try {
     const client = new PrismaClient();
     await client.$connect();
     const store = await loadStore(client);
-
     return {
-      backend: 'prisma',
-      orgId: store.org.id,
-      store,
-      flush: async () => {
-        await persistStore(client, store);
+      runtime: {
+        backend: 'prisma',
+        orgId: store.org.id,
+        store,
+        flush: async () => {
+          await persistStore(client, store);
+        },
+        strictBackend: false,
       },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[Remit] Prisma backend unavailable, using memory store. Reason: ${message}`);
-    return null;
+    return { runtime: null, reason: message };
   }
 }

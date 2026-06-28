@@ -27,9 +27,10 @@ describe('WHS hierarchy-of-controls guardrail', () => {
 
   it('completing a review updates status and appends an audit trail', () => {
     const before = hazard({ status: 'due' });
-    const after = completeReview(before, '2026-12-20', FIXED);
+    const after = completeReview(before, '2026-12-20', 'Controls remain effective', 'System WHS Reviewer', FIXED);
     expect(after.status).toBe('reviewed');
     expect(after.reviewDate).toBe('2026-12-20');
     expect(after.audit.length).toBe(before.audit.length + 2);
+    expect(after.reviews.length).toBe(1);
   });
 });

@@ -37,10 +37,18 @@ line(wfh.letter(store, r0.id)); rule();
 // 5. WHS — validate controls + complete the due review
 const v = whs.validate(store, 'HZ-024');
 line(`5. Hazard HZ-024 controls valid: ${v.valid}${v.warnings.length ? ` (warnings: ${v.warnings.length})` : ''}`);
-const h = whs.review(store, 'HZ-024', '2026-12-20', now);
+const h = whs.review(store, 'HZ-024', {
+  nextReviewDate: '2026-12-20',
+  finding: 'Higher-order controls remain effective',
+  reviewer: 'System WHS Reviewer',
+}, now);
 line(`   Review completed -> status ${h.status}, next ${h.reviewDate}, audit events ${h.audit.length}`);
 
 // 6. Outcomes — record a cycle review
-const c = outcomes.review(store, 'OC-2026-Q3-014', now);
+const c = outcomes.review(store, 'OC-2026-Q3-014', {
+  reviewerName: 'System Manager',
+  summary: 'Delivery status reviewed against agreed outcomes',
+  signedOff: true,
+}, now);
 line(`6. Outcome cycle review recorded -> status ${c.status}; "${c.audit[c.audit.length - 2]?.event}"`);
 rule(); line('Done — every step above is enforced by src/domain (pure) + src/services.\n');
