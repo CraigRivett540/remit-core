@@ -1,5 +1,14 @@
 import type { Request } from 'express';
-import type { AssessmentFactor, Control, DecisionType, HazardType, Jurisdiction, Outcome, OutcomeState } from '../domain/types.js';
+import type {
+  AssessmentFactor,
+  Control,
+  DecisionType,
+  HazardType,
+  Jurisdiction,
+  Outcome,
+  OutcomeState,
+  StaffRecordType,
+} from '../domain/types.js';
 import { ValidationError, AuthError, ForbiddenError } from '../services/errors.js';
 
 const JURISDICTIONS: Jurisdiction[] = ['VIC', 'NSW', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
@@ -8,6 +17,7 @@ const RATINGS: AssessmentFactor['rating'][] = ['green', 'amber', 'red'];
 const HAZARD_TYPES: HazardType[] = ['psychosocial', 'physical'];
 const CONTROL_TIERS: Control['tier'][] = ['higher', 'lower'];
 const OUTCOME_STATES: OutcomeState[] = ['done', 'progress', 'notstarted'];
+const STAFF_RECORD_TYPES: StaffRecordType[] = ['existing', 'new'];
 const ACTOR_ROLES = ['ADMIN', 'ASSESSOR', 'DECISION_MAKER', 'WHS_LEAD', 'MANAGER', 'VIEWER'] as const;
 
 const MAX_LIMIT = 50;
@@ -24,6 +34,13 @@ function asRecord(value: unknown, message: string): Record<string, unknown> {
 }
 function asOptionalString(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
+function asOptionalTrimmedString(value: unknown, fieldName: string): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'string') throw new ValidationError(`${fieldName} must be a string.`);
   const trimmed = value.trim();
   return trimmed || undefined;
 }
@@ -111,12 +128,26 @@ export function parseNewRequestPayload(body: unknown) {
   if (!JURISDICTIONS.includes(jurisdiction)) {
     throw new ValidationError(`jurisdiction must be one of: ${JURISDICTIONS.join(', ')}`);
   }
+  const staffRecordTypeRaw = payload.staffRecordType === undefined
+    ? 'existing'
+    : asNonEmptyString(payload.staffRecordType, 'staffRecordType').toLowerCase();
+  const staffRecordType = staffRecordTypeRaw as StaffRecordType;
+  if (!STAFF_RECORD_TYPES.includes(staffRecordType)) {
+    throw new ValidationError(`staffRecordType must be one of: ${STAFF_RECORD_TYPES.join(', ')}`);
+  }
+  const previousArrangementSinceRaw = asOptionalTrimmedString(payload.previousArrangementSince, 'previousArrangementSince');
   return {
     employee: asNonEmptyString(payload.employee, 'employee'),
     role: asNonEmptyString(payload.role, 'role'),
     jurisdiction,
     days: asNonEmptyString(payload.days, 'days'),
     pattern: asNonEmptyString(payload.pattern, 'pattern'),
+    staffRecordType,
+    previousArrangement: asOptionalTrimmedString(payload.previousArrangement, 'previousArrangement'),
+    previousArrangementSince: previousArrangementSinceRaw
+      ? parseDate(previousArrangementSinceRaw, 'previousArrangementSince')
+      : undefined,
+    previousArrangementNotes: asOptionalTrimmedString(payload.previousArrangementNotes, 'previousArrangementNotes'),
   };
 }
 

@@ -76,6 +76,7 @@ const DEMO_STEPS = [
   { t: 'Refresh data', d: 'Reload current API state from the server.', go: () => void resetDemo() },
 ];
 let demoDone = [];
+const STAFF_ENTRY_AUDIT_PREFIX = '[staff-entry] ';
 
 const byId = (id) => document.getElementById(id);
 const readValue = (id) => {
@@ -172,7 +173,9 @@ function requestAssessmentRows(request) {
 }
 
 function requestAuditRows(request) {
-  const rows = (request.audit ?? []).map((event) => [formatDateTime(event.at), event.event, 0]);
+  const rows = (request.audit ?? [])
+    .filter((event) => !event.event.startsWith(STAFF_ENTRY_AUDIT_PREFIX))
+    .map((event) => [formatDateTime(event.at), event.event, 0]);
   if (!request.decision) rows.push(['—', 'Awaiting decision', 1]);
   return rows;
 }
@@ -623,6 +626,11 @@ async function openRequest(id) {
   const assessments = requestAssessmentRows(request)
     .map((factor) => `<div class="ar"><span class="dotf ${esc(factor[2])}"></span><span class="aq">${esc(factor[0])}</span><span class="aa">${esc(factor[1])}</span></div>`)
     .join('');
+  const staffEntry = request.staffEntry ?? { staffRecordType: 'existing' };
+  const staffRecordLabel = staffEntry.staffRecordType === 'new' ? 'New staff member' : 'Existing staff member';
+  const previousArrangementDetail = staffEntry.previousArrangement
+    ? `${staffEntry.previousArrangement}${staffEntry.previousArrangementSince ? ` · since ${formatDate(staffEntry.previousArrangementSince)}` : ''}`
+    : 'Not recorded';
 
   let consistencyBlock = '';
   if (request.consistency.state === 'flag') {
@@ -708,7 +716,7 @@ async function openRequest(id) {
     </div>
     <div class="dgrid">
       <div style="display:flex;flex-direction:column;gap:18px">
-        <div class="panel"><div class="ph"><span class="step">1</span><span class="pt">The request</span></div><div class="pb"><div class="reqline"><div><div class="rl3">Days</div><div class="rv3">${esc(request.days)}</div></div><div><div class="rl3">Pattern</div><div class="rv3">${esc(request.pattern)}</div></div><div><div class="rl3">Place of work</div><div class="rv3">Home (${esc(request.jurisdiction)})</div></div></div></div></div>
+        <div class=\"panel\"><div class=\"ph\"><span class=\"step\">1</span><span class=\"pt\">The request</span></div><div class=\"pb\"><div class=\"reqline\"><div><div class=\"rl3\">Days</div><div class=\"rv3\">${esc(request.days)}</div></div><div><div class=\"rl3\">Pattern</div><div class=\"rv3\">${esc(request.pattern)}</div></div><div><div class=\"rl3\">Staff record</div><div class=\"rv3\">${esc(staffRecordLabel)}</div></div><div><div class=\"rl3\">Previous arrangement</div><div class=\"rv3\">${esc(previousArrangementDetail)}</div></div><div><div class=\"rl3\">Place of work</div><div class=\"rv3\">Home (${esc(request.jurisdiction)})</div></div></div>${staffEntry.previousArrangementNotes ? `<div class=\"ctrlnote\" style=\"margin-top:10px\">Previous arrangement notes: ${esc(staffEntry.previousArrangementNotes)}</div>` : ''}</div></div>
         <div class="panel"><div class="ph"><span class="step">2</span><span class="pt">Role-suitability assessment</span><span class="pmeta">${request.assessmentComplete ? `${request.assessment.length} factors` : 'incomplete'}</span></div><div class="pb"><div class="asmt">${assessments}</div></div></div>
         <div class="panel"><div class="ph"><span class="step">3</span><span class="pt">Consistency check</span><span class="pmeta">adverse-action guardrail</span></div><div class="pb">${consistencyBlock}</div></div>
         <div class="panel"><div class="ph"><span class="step">4</span><span class="pt">Decision</span></div><div class="pb">${decisionBlock}</div></div>
@@ -811,15 +819,21 @@ function openNew() {
 
 function closeNew() {
   byId('overlay')?.classList.remove('open');
-  ['nf-name', 'nf-role', 'nf-pat'].forEach((id) => {
+  ['nf-name', 'nf-role', 'nf-pat', 'nf-prev-arr', 'nf-prev-notes', 'nf-prev-since'].forEach((id) => {
     const field = byId(id);
     if (field instanceof HTMLInputElement) field.value = '';
   });
+  const staffType = byId('nf-staff-type');
+  if (staffType instanceof HTMLSelectElement) staffType.value = 'existing';
 }
 
 async function submitNew() {
   const employee = readValue('nf-name');
   const role = readValue('nf-role');
+  const staffRecordType = readValue('nf-staff-type') || 'existing';
+  const previousArrangement = readValue('nf-prev-arr');
+  const previousArrangementSince = readValue('nf-prev-since');
+  const previousArrangementNotes = readValue('nf-prev-notes');
   const jurisdiction = readValue('nf-jur');
   const days = readValue('nf-days');
   const pattern = readValue('nf-pat');
@@ -827,10 +841,24 @@ async function submitNew() {
     toast('Complete all request fields');
     return;
   }
+  if (staffRecordType === 'existing' && !previousArrangement) {
+    toast('Add previous arrangement details for existing staff');
+    return;
+  }
   try {
     const created = await api('/api/requests', {
       method: 'POST',
-      body: JSON.stringify({ employee, role, jurisdiction, days, pattern }),
+      body: JSON.stringify({
+        employee,
+        role,
+        jurisdiction,
+        days,
+        pattern,
+        staffRecordType,
+        previousArrangement,
+        previousArrangementSince,
+        previousArrangementNotes,
+      }),
     });
     closeNew();
     await refreshAll();

@@ -18,12 +18,15 @@ import type {
   PriorDecision,
   Rating,
   RequestStatus,
+  StaffEntry,
+  StaffRecordType,
 } from '../domain/types.js';
 import type { StoreRuntime } from './runtime.js';
 import { seed, type Store } from './memory.js';
 
 const DEFAULT_ORG_ID = 'org_brightwater';
 const DEFAULT_ORG_NAME = 'Organisation';
+const STAFF_ENTRY_AUDIT_PREFIX = '[staff-entry] ';
 
 // The domain/service/API layers operate on the in-memory `Store` contract. This adapter maps that
 // contract onto the new relational CRM schema (Org, Employee, WfhRequest + relations, Hazard +
@@ -264,6 +267,53 @@ function asDateFromDay(value: string): Date {
   return asDate(`${value}T00:00:00.000Z`);
 }
 
+function parseStaffRecordType(value: unknown): StaffRecordType {
+  return value === 'new' ? 'new' : 'existing';
+}
+
+function parseStaffEntryAuditEvent(event: string): StaffEntry | undefined {
+  if (!event.startsWith(STAFF_ENTRY_AUDIT_PREFIX)) return undefined;
+  try {
+    const payload = JSON.parse(event.slice(STAFF_ENTRY_AUDIT_PREFIX.length)) as Record<string, unknown>;
+    if (!payload || typeof payload !== 'object') return undefined;
+    const previousArrangement = typeof payload.previousArrangement === 'string' ? payload.previousArrangement.trim() : undefined;
+    const previousArrangementSince = typeof payload.previousArrangementSince === 'string' ? payload.previousArrangementSince.trim() : undefined;
+    const previousArrangementNotes = typeof payload.previousArrangementNotes === 'string' ? payload.previousArrangementNotes.trim() : undefined;
+    return {
+      staffRecordType: parseStaffRecordType(payload.staffRecordType),
+      previousArrangement: previousArrangement || undefined,
+      previousArrangementSince: previousArrangementSince || undefined,
+      previousArrangementNotes: previousArrangementNotes || undefined,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function serialiseStaffEntryAuditEvent(staffEntry: StaffEntry | undefined): string | undefined {
+  if (!staffEntry) return undefined;
+  return `${STAFF_ENTRY_AUDIT_PREFIX}${JSON.stringify({
+    staffRecordType: parseStaffRecordType(staffEntry.staffRecordType),
+    previousArrangement: staffEntry.previousArrangement?.trim() || undefined,
+    previousArrangementSince: staffEntry.previousArrangementSince?.trim() || undefined,
+    previousArrangementNotes: staffEntry.previousArrangementNotes?.trim() || undefined,
+  })}`;
+}
+
+function extractStaffEntryFromAudit(audit: AuditEvent[]): { staffEntry?: StaffEntry; audit: AuditEvent[] } {
+  let staffEntry: StaffEntry | undefined;
+  const filteredAudit: AuditEvent[] = [];
+  for (const event of audit) {
+    const parsed = parseStaffEntryAuditEvent(event.event);
+    if (parsed) {
+      staffEntry = parsed;
+      continue;
+    }
+    filteredAudit.push(event);
+  }
+  return { staffEntry, audit: filteredAudit };
+}
+
 function initialsOf(name: string): string {
   return (
     name
@@ -318,10 +368,11 @@ function mapRequest(row: LoadedRequest): { request: import('../domain/types.js')
       }
     : undefined;
 
-  const audit: AuditEvent[] = (row.audit ?? []).map((entry) => ({
+  const rawAudit: AuditEvent[] = (row.audit ?? []).map((entry) => ({
     at: entry.at.toISOString(),
     event: entry.event,
   }));
+  const { staffEntry, audit } = extractStaffEntryFromAudit(rawAudit);
 
   return {
     request: {
@@ -332,6 +383,7 @@ function mapRequest(row: LoadedRequest): { request: import('../domain/types.js')
       jurisdiction: toJurisdiction(row.jurisdiction),
       days: row.requestedDays,
       pattern: row.pattern,
+      staffEntry,
       assessment,
       assessmentComplete: Boolean(row.assessment?.completedAt),
       status: toRequestStatus(row.status),
@@ -570,6 +622,14 @@ async function persistStore(client: PrismaClient, store: Store): Promise<void> {
         request.roleKey,
         request.jurisdiction,
       );
+      const requestAudit: AuditEvent[] = [...request.audit];
+      const staffEntryAuditEvent = serialiseStaffEntryAuditEvent(request.staffEntry);
+      if (staffEntryAuditEvent) {
+        requestAudit.unshift({
+          at: request.audit[0]?.at ?? new Date().toISOString(),
+          event: staffEntryAuditEvent,
+        });
+      }
 
       await tx.wfhRequest.create({
         data: {
@@ -634,9 +694,9 @@ async function persistStore(client: PrismaClient, store: Store): Promise<void> {
         });
       }
 
-      if (request.audit.length > 0) {
+      if (requestAudit.length > 0) {
         await tx.auditEntry.createMany({
-          data: request.audit.map((event) => ({
+          data: requestAudit.map((event) => ({
             org: orgId,
             at: asDate(event.at),
             actor: 'system',
