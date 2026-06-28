@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Remit Platform</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="hero">
+    <h1>Remit Platform</h1>
+    <p>Employer-side workforce-flexibility governance. No activity surveillance. Decision, duty and outcomes only.</p>
+    <div class="hero-actions">
+      <button id="refresh-all" type="button">Refresh data</button>
+      <span id="last-sync">Not synced yet.</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>Organisation status</h2>
+      <p><strong>Health:</strong> <span id="health-status">—</span></p>
+      <p><strong>Organisation:</strong> <span id="health-org">—</span></p>
+      <p><strong>Jurisdictions:</strong> <span id="jurisdictions">—</span></p>
+    </section>
+
+    <section class="card">
+      <h2>Create work-from-home request</h2>
+      <form id="create-request-form" class="stack">
+        <label>Employee
+          <input name="employee" required placeholder="Jordan Wells">
+        </label>
+        <label>Role
+          <input name="role" required placeholder="Account Manager · Client Advisory">
+        </label>
+        <label>Jurisdiction
+          <select name="jurisdiction" required>
+            <option value="VIC">VIC</option>
+            <option value="NSW">NSW</option>
+            <option value="QLD">QLD</option>
+            <option value="WA">WA</option>
+            <option value="SA">SA</option>
+            <option value="TAS">TAS</option>
+            <option value="ACT">ACT</option>
+            <option value="NT">NT</option>
+          </select>
+        </label>
+        <label>Requested days
+          <input name="days" required placeholder="2 days">
+        </label>
+        <label>Pattern
+          <input name="pattern" required placeholder="Mon & Tue">
+        </label>
+        <button type="submit">Create request</button>
+      </form>
+    </section>
+
+    <section class="card span-2">
+      <h2>WFH requests</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Employee</th>
+              <th>Role</th>
+              <th>Jurisdiction</th>
+              <th>Status</th>
+              <th>Consistency</th>
+            </tr>
+          </thead>
+          <tbody id="requests-body"></tbody>
+        </table>
+      </div>
+      <p class="help">Select a request row to run assessment, distinguish a flag, make a decision, and generate the letter.</p>
+    </section>
+
+    <section class="card">
+      <h2>Selected request workflow</h2>
+      <h3 id="selected-request-title">No request selected</h3>
+      <pre id="selected-request-json">Select a request to inspect details.</pre>
+
+      <div class="stack">
+        <label>Assessment factors (JSON array)
+          <textarea id="assessment-json" rows="6"></textarea>
+        </label>
+        <button id="run-assessment" type="button">Run assessment</button>
+      </div>
+
+      <form id="distinguish-form" class="stack">
+        <label>Distinguishing factor (for flagged consistency)
+          <input id="distinguish-factor" required placeholder="Client visits require weekly in-person cadence">
+        </label>
+        <button type="submit">Record distinguishing factor</button>
+      </form>
+
+      <form id="decision-form" class="stack">
+        <label>Decision type
+          <select id="decision-type" required>
+            <option value="approved">approved</option>
+            <option value="modified">modified</option>
+            <option value="refused">refused</option>
+          </select>
+        </label>
+        <label>Ground
+          <input id="decision-ground" required placeholder="Consistent with comparable approval">
+        </label>
+        <button type="submit">Apply decision</button>
+      </form>
+
+      <button id="load-letter" type="button">Generate letter preview</button>
+      <pre id="letter-output">No letter loaded.</pre>
+    </section>
+
+    <section class="card">
+      <h2>WHS hazards</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Review date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="hazards-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Outcome contracts</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Employee</th>
+              <th>Period</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="contracts-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card span-2">
+      <h2>Activity log</h2>
+      <pre id="activity-log">Platform not yet initialised.</pre>
+    </section>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
