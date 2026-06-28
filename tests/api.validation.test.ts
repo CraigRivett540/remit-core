@@ -1,11 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import {
   paginate,
+  parseActorContext,
+  parseContractReviewPayload,
   parseDecisionPayload,
+  parseNewContractPayload,
+  parseNewHazardPayload,
   parseNewRequestPayload,
   parsePagination,
+  requireRole,
 } from '../src/api/validation.js';
-import { ValidationError } from '../src/services/errors.js';
+import { AuthError, ForbiddenError, ValidationError } from '../src/services/errors.js';
 
 describe('api validation', () => {
   test('pagination defaults are applied', () => {
@@ -52,5 +57,49 @@ describe('api validation', () => {
     expect(result.page.total).toBe(4);
     expect(result.page.hasPrev).toBe(true);
     expect(result.page.hasNext).toBe(false);
+  });
+
+  test('actor context parsing validates auth headers and role', () => {
+    const req = {
+      header: (name: string) => {
+        if (name === 'x-user-id') return 'user-1';
+        if (name === 'x-user-role') return 'ADMIN';
+        return undefined;
+      },
+    } as never;
+    const actor = parseActorContext(req);
+    expect(actor).toEqual({ userId: 'user-1', role: 'ADMIN' });
+    expect(() => parseActorContext({ header: () => undefined } as never)).toThrow(AuthError);
+  });
+
+  test('requireRole denies disallowed actor role', () => {
+    expect(() => requireRole({ userId: 'u', role: 'VIEWER' }, ['ADMIN'], 'mutate records')).toThrow(ForbiddenError);
+  });
+
+  test('hazard payload parses controls and review date', () => {
+    const payload = parseNewHazardPayload({
+      name: 'Workload spike',
+      type: 'psychosocial',
+      jurisdiction: 'NSW',
+      controls: [{ tier: 'higher', text: 'Work redesign', primary: true }],
+      consultation: 'Workers consulted',
+      triggers: ['Scheduled — 2026-09-01'],
+      reviewDate: '2026-09-01',
+    });
+    expect(payload.controls[0]?.tier).toBe('higher');
+    expect(payload.reviewDate).toBe('2026-09-01');
+  });
+
+  test('contract payload and review payload validate expected fields', () => {
+    const contractPayload = parseNewContractPayload({
+      employee: 'Jordan Wells',
+      jurisdiction: 'VIC',
+      period: 'Q3 2026',
+      signalSource: 'CRM',
+      outcomes: [{ text: 'Deliver proposal', state: 'progress' }],
+    });
+    expect(contractPayload.outcomes.length).toBe(1);
+    const reviewPayload = parseContractReviewPayload({});
+    expect(reviewPayload.signedOff).toBe(true);
   });
 });

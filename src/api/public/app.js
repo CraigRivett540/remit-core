@@ -2,9 +2,13 @@ const state = {
   orgId: null,
   orgName: 'Organisation',
   backend: 'memory',
+  backendFallbackReason: null,
   requests: [],
   hazards: [],
   outcomes: [],
+  report: null,
+  actorId: 'ui-admin',
+  actorRole: 'ADMIN',
   currentFilter: 'all',
   activeRequestId: null,
   activeHazardId: null,
@@ -190,9 +194,13 @@ function consistencyPill(consistencyState) {
 }
 
 async function api(path, init = {}) {
-  const needsOrgHeader = /^\/api\/(requests|hazards|contracts)/.test(path);
+  const needsOrgHeader = /^\/api\/(requests|hazards|contracts|reports)/.test(path);
   const headers = { 'Content-Type': 'application/json', ...(init.headers ?? {}) };
-  if (needsOrgHeader && state.orgId) headers['x-org-id'] = state.orgId;
+  if (needsOrgHeader && state.orgId) {
+    headers['x-org-id'] = state.orgId;
+    headers['x-user-id'] = state.actorId;
+    headers['x-user-role'] = state.actorRole;
+  }
 
   const response = await fetch(path, {
     method: 'GET',
@@ -205,7 +213,7 @@ async function api(path, init = {}) {
 }
 
 async function fetchAll(endpoint) {
-  const limit = 100;
+  const limit = 50;
   let offset = 0;
   const allItems = [];
   for (;;) {
@@ -237,6 +245,7 @@ async function refreshHealth() {
   state.orgId = health.orgId ?? state.orgId;
   state.orgName = health.org ?? state.orgName;
   state.backend = health.backend ?? state.backend;
+  state.backendFallbackReason = health.backendFallbackReason ?? null;
 }
 
 async function refreshRequests() {
@@ -252,6 +261,10 @@ async function refreshHazards() {
 async function refreshOutcomes() {
   state.outcomes = await fetchAll('/api/contracts');
   if (state.activeOutcomeId && !findOutcome(state.activeOutcomeId)) state.activeOutcomeId = null;
+}
+
+async function refreshReport() {
+  state.report = await api('/api/reports/summary');
 }
 
 function renderOrgDetails() {
@@ -422,11 +435,12 @@ function renderOutcomes() {
 }
 
 function updateOverview() {
-  const openCount = state.requests.filter((request) => request.status === 'pending' || request.status === 'flagged').length;
-  const pendingCount = state.requests.filter((request) => request.status === 'pending').length;
-  const flaggedCount = state.requests.filter((request) => request.status === 'flagged').length;
-  const dueHazards = state.hazards.filter((hazard) => hazard.status === 'due').length;
-  const onTrackOutcomes = state.outcomes.filter((contract) => contract.status === 'ontrack').length;
+  const report = state.report;
+  const pendingCount = report?.requests?.pending ?? state.requests.filter((request) => request.status === 'pending').length;
+  const flaggedCount = report?.requests?.flagged ?? state.requests.filter((request) => request.status === 'flagged').length;
+  const openCount = pendingCount + flaggedCount;
+  const dueHazards = report?.dueHazardReviews ?? state.hazards.filter((hazard) => hazard.status === 'due').length;
+  const onTrackOutcomes = report?.outcomes?.ontrack ?? state.outcomes.filter((contract) => contract.status === 'ontrack').length;
 
   const openNode = byId('ov-open');
   const flaggedNode = byId('ov-flag');
@@ -458,6 +472,24 @@ function updateOverview() {
   const queue = byId('att-queue');
   if (!queue) return;
   const items = [];
+  if (state.backend === 'memory' && state.backendFallbackReason) {
+    items.push(`<div class="item">
+        <div class="ic r">!</div>
+        <div>
+          <div class="tt">Persistence fallback active</div>
+          <div class="ds">Running on in-memory backend: ${esc(state.backendFallbackReason)}</div>
+        </div>
+      </div>`);
+  }
+  if (report) {
+    items.push(`<div class="item">
+        <div class="ic a">∑</div>
+        <div>
+          <div class="tt">Governance summary</div>
+          <div class="ds">${report.unresolvedFlags} unresolved flags · ${report.dueHazardReviews} hazard reviews due · ${report.outcomes.delivered}/${report.outcomes.totalItems} outcomes delivered</div>
+        </div>
+      </div>`);
+  }
   state.requests
     .filter((request) => request.status === 'flagged')
     .forEach((request) => {
@@ -494,6 +526,15 @@ function updateOverview() {
         <button class="btn ghost sm go" onclick="openRequest('${esc(request.id)}')">Open</button>
       </div>`);
     });
+  report?.recentAudit?.slice(0, 2).forEach((entry) => {
+    items.push(`<div class="item">
+      <div class="ic a">•</div>
+      <div>
+        <div class="tt">Recent audit — ${esc(entry.id)}</div>
+        <div class="ds">${esc(formatDateTime(entry.at))} · ${esc(entry.event)}</div>
+      </div>
+    </div>`);
+  });
   if (items.length) {
     queue.innerHTML = items.join('');
     return;
@@ -522,7 +563,7 @@ function renderAll() {
 
 async function refreshAll() {
   await refreshHealth();
-  await Promise.all([refreshRequests(), refreshHazards(), refreshOutcomes()]);
+  await Promise.all([refreshRequests(), refreshHazards(), refreshOutcomes(), refreshReport()]);
   renderAll();
 }
 
@@ -867,7 +908,7 @@ async function openHazard(id) {
       <div style="display:flex;flex-direction:column;gap:18px">
         <div class="panel"><div class="ph"><span class="step">1</span><span class="pt">Hazard identification</span></div><div class="pb"><p style="margin:0;font-size:13px;line-height:1.55">${esc(hazard.name)} is tracked as an active organisational hazard record.</p></div></div>
         <div class="panel"><div class="ph"><span class="step">2</span><span class="pt">Controls applied</span><span class="pmeta">higher-order first</span></div><div class="pb"><div class="asmt">${controls || '<div class="ctrlnote">No controls recorded.</div>'}</div></div></div>
-        <div class="panel"><div class="ph"><span class="step">3</span><span class="pt">Consultation</span></div><div class="pb"><p style="margin:0;font-size:13px;line-height:1.55">${esc(hazard.consultation || 'No consultation note recorded.')}</p></div></div>
+        <div class="panel"><div class="ph"><span class="step">3</span><span class="pt">Consultation</span></div><div class="pb"><p style="margin:0;font-size:13px;line-height:1.55">${esc(hazard.consultation || 'No consultation note recorded.')}</p><div class="dec-actions"><button class="btn ghost" onclick="updateHazardConsultation('${esc(id)}')">Update consultation</button></div></div></div>
         <div class="panel"><div class="ph"><span class="step">4</span><span class="pt">Review &amp; triggers</span></div><div class="pb">${reviewBlock}<div style="margin-top:12px">${triggers || '<div class="ctrlnote">No triggers recorded.</div>'}</div></div></div>
         <div class="panel"><div class="ph"><span class="step">5</span><span class="pt">Validation</span></div><div class="pb">
           <div class="dec-actions"><button class="btn ghost" onclick="validateHazard('${esc(id)}')">Run validation</button></div>
@@ -885,14 +926,99 @@ async function completeHazardReview(id) {
   const now = new Date();
   now.setDate(now.getDate() + 90);
   const nextReviewDate = now.toISOString().slice(0, 10);
+  const finding = 'Higher-order controls remain effective after review.';
   try {
     await api(`/api/hazards/${id}/review`, {
       method: 'POST',
-      body: JSON.stringify({ nextReviewDate }),
+      body: JSON.stringify({ nextReviewDate, finding, reviewer: 'Workspace WHS Lead' }),
     });
     await refreshAll();
     toast('Hazard review recorded');
     await openHazard(id);
+  } catch (error) {
+    toast(toMessage(error));
+  }
+}
+
+async function createHazardRecord() {
+  const name = window.prompt('Hazard name');
+  if (!name) return;
+  const jurisdiction = (window.prompt('Jurisdiction code (VIC/NSW/QLD/WA/SA/TAS/ACT/NT)', 'VIC') ?? 'VIC').trim().toUpperCase();
+  const controlText = window.prompt('Primary higher-order control', 'Workload redistribution and prioritisation');
+  if (!controlText) return;
+  const reviewDate = new Date();
+  reviewDate.setDate(reviewDate.getDate() + 30);
+  const payload = {
+    name,
+    type: 'psychosocial',
+    jurisdiction,
+    controls: [{ tier: 'higher', text: controlText, primary: true }],
+    consultation: 'Workers and HSR consulted.',
+    triggers: [`Scheduled — ${reviewDate.toISOString().slice(0, 10)}`],
+    reviewDate: reviewDate.toISOString().slice(0, 10),
+  };
+  try {
+    const created = await api('/api/hazards', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    await refreshAll();
+    toast(`Hazard ${created.id} created`);
+    await openHazard(created.id);
+  } catch (error) {
+    toast(toMessage(error));
+  }
+}
+
+async function updateHazardConsultation(id) {
+  const hazard = findHazard(id);
+  if (!hazard) return;
+  const consultation = window.prompt('Consultation update', hazard.consultation || 'Workers and HSR consulted.');
+  if (!consultation) return;
+  try {
+    await api(`/api/hazards/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ consultation }),
+    });
+    await refreshAll();
+    toast('Consultation note updated');
+    await openHazard(id);
+  } catch (error) {
+    toast(toMessage(error));
+  }
+}
+
+async function createOutcomeContract() {
+  const employee = window.prompt('Employee name');
+  if (!employee) return;
+  const period = window.prompt('Contract period', 'Q3 2026');
+  if (!period) return;
+  const jurisdiction = (window.prompt('Jurisdiction code (VIC/NSW/QLD/WA/SA/TAS/ACT/NT)', 'VIC') ?? 'VIC').trim().toUpperCase();
+  const rawOutcomes = window.prompt('Outcome items (separate with semicolons)', 'Deliverable 1; Deliverable 2');
+  if (!rawOutcomes) return;
+  const outcomes = rawOutcomes
+    .split(';')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((text) => ({ text, state: 'notstarted' }));
+  if (!outcomes.length) {
+    toast('Add at least one outcome item');
+    return;
+  }
+  try {
+    const created = await api('/api/contracts', {
+      method: 'POST',
+      body: JSON.stringify({
+        employee,
+        jurisdiction,
+        period,
+        signalSource: 'CRM',
+        outcomes,
+      }),
+    });
+    await refreshAll();
+    toast(`Contract ${created.id} created`);
+    await openOutcome(created.id);
   } catch (error) {
     toast(toMessage(error));
   }
@@ -945,7 +1071,7 @@ async function openOutcome(id) {
     <div class="dgrid">
       <div style="display:flex;flex-direction:column;gap:18px">
         <div class="panel"><div class="ph"><span class="step">1</span><span class="pt">Agreed outcomes</span><span class="pmeta">${doneCount} of ${contract.outcomes.length} delivered</span></div><div class="pb"><div class="asmt">${outcomeRows || '<div class="ctrlnote">No outcomes recorded.</div>'}</div></div></div>
-        <div class="panel"><div class="ph"><span class="step">2</span><span class="pt">Delivery signal source</span></div><div class="pb"><p style="margin:0;font-size:13px;line-height:1.55">${esc(contract.signalSource)} delivery-state signal is used as the output proxy.</p></div></div>
+        <div class="panel"><div class="ph"><span class="step">2</span><span class="pt">Delivery signal source</span></div><div class="pb"><p style="margin:0;font-size:13px;line-height:1.55">${esc(contract.signalSource)} delivery-state signal is used as the output proxy.</p><div class="dec-actions"><button class="btn ghost" onclick="syncOutcomeProgress('${esc(id)}')">Sync delivery state</button></div></div></div>
         <div class="panel"><div class="ph"><span class="step">3</span><span class="pt">Cycle review</span></div><div class="pb">${reviewBlock}</div></div>
       </div>
       <div><div class="panel"><div class="ph"><span class="step" style="background:var(--ochre)">∎</span><span class="pt">Record</span></div><div class="pb"><div class="rail">${rail || '<div class="ctrlnote">No audit events recorded.</div>'}</div></div></div></div>
@@ -955,9 +1081,51 @@ async function openOutcome(id) {
   window.scrollTo(0, 0);
 }
 
+async function syncOutcomeProgress(id) {
+  const contract = findOutcome(id);
+  if (!contract) return;
+  const updatedOutcomes = [];
+  let advanced = false;
+  for (const outcome of contract.outcomes) {
+    if (!advanced && outcome.state === 'notstarted') {
+      updatedOutcomes.push({ ...outcome, state: 'progress' });
+      advanced = true;
+      continue;
+    }
+    if (!advanced && outcome.state === 'progress') {
+      updatedOutcomes.push({ ...outcome, state: 'done' });
+      advanced = true;
+      continue;
+    }
+    updatedOutcomes.push(outcome);
+  }
+  if (!advanced) {
+    toast('All outcomes are already marked done');
+    return;
+  }
+  try {
+    await api(`/api/contracts/${id}/outcomes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ outcomes: updatedOutcomes }),
+    });
+    await refreshAll();
+    toast('Delivery state synced');
+    await openOutcome(id);
+  } catch (error) {
+    toast(toMessage(error));
+  }
+}
+
 async function recordCycleReview(id) {
   try {
-    await api(`/api/contracts/${id}/review`, { method: 'POST' });
+    await api(`/api/contracts/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify({
+        reviewerName: 'Workspace manager',
+        summary: 'Cycle review completed against current delivery states.',
+        signedOff: true,
+      }),
+    });
     await refreshAll();
     toast('Cycle review recorded');
     await openOutcome(id);
@@ -1195,10 +1363,14 @@ Object.assign(window, {
   submitNew,
   openHazard,
   backHaz,
+  createHazardRecord,
+  updateHazardConsultation,
   validateHazard,
   completeHazardReview,
   openOutcome,
   backOut,
+  createOutcomeContract,
+  syncOutcomeProgress,
   recordCycleReview,
   resetDemo,
   toast,

@@ -31,6 +31,7 @@ export const hazard = (over: Partial<Hazard> = {}): Hazard => ({
   triggers: ['Scheduled review'],
   status: 'ontrack',
   reviewDate: '2026-08-12',
+  reviews: [],
   audit: [],
   ...over,
 });
@@ -47,6 +48,7 @@ export const contract = (over: Partial<OutcomeContract> = {}): OutcomeContract =
   ],
   signalSource: 'CRM',
   status: 'ontrack',
+  cycleReviews: [],
   audit: [],
   ...over,
 });

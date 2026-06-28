@@ -34,11 +34,14 @@ export function create(store: Store, input: NewRequest, now = new Date()): WfhRe
 }
 
 export function assess(store: Store, id: string, factors: AssessmentFactor[], now = new Date()): WfhRequest {
-  return upsert(store, completeAssessment(get(store, id), factors, store.priorDecisions, now));
+  const current = get(store, id);
+  if (current.decision) throw new GuardError('Decision finalised — assessments can no longer be edited.');
+  return upsert(store, completeAssessment(current, factors, store.priorDecisions, now));
 }
 
 export function distinguish(store: Store, id: string, factor: string, now = new Date()): WfhRequest {
   const r = get(store, id);
+  if (r.decision) throw new GuardError('Decision finalised — distinguishing factors can no longer be edited.');
   const resolved = resolveByDistinguishing(r.consistency, factor);
   if (resolved === r.consistency) throw new GuardError('No active consistency flag to resolve.');
   return upsert(store, { ...r, consistency: resolved, audit: [...r.audit, stamp(now, 'Distinguishing factor recorded — refusal unlocked')] });
@@ -46,6 +49,7 @@ export function distinguish(store: Store, id: string, factor: string, now = new 
 
 export function makeDecision(store: Store, id: string, type: DecisionType, ground: string, now = new Date()): WfhRequest {
   let r = get(store, id);
+  if (r.decision) throw new GuardError('Decision already finalised for this request.');
   if (type === 'approved' && r.consistency.state === 'flag') {
     r = { ...r, consistency: resolveByAlignment(r.consistency) };
   }

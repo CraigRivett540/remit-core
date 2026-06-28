@@ -4,9 +4,14 @@ import { contract, FIXED } from './fixtures.js';
 
 describe('outcome contracts', () => {
   it('records a cycle review with delivered count and retention audit', () => {
-    const after = recordCycleReview(contract(), FIXED);
+    const after = recordCycleReview(contract(), {
+      reviewerName: 'System Manager',
+      summary: 'Cycle review completed.',
+      signedOff: true,
+    }, FIXED);
     expect(after.status).toBe('reviewed');
     expect(after.audit[0]?.event).toMatch(/2 of 3 outcomes delivered/);
-    expect(after.audit.length).toBe(2);
+    expect(after.audit.length).toBe(3);
+    expect(after.cycleReviews.length).toBe(1);
   });
 });

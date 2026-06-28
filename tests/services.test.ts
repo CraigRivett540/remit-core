@@ -36,13 +36,76 @@ describe('wfh service loop', () => {
     expect(refused.status).toBe('refused');
     expect(refused.decision?.letterTemplate).toBe('EO-VIC-04');
   });
+
+  it('locks request edits after decision finalisation', () => {
+    const r = wfh.create(store, { employee: 'Kim Dao', role: 'Analyst · Research', jurisdiction: 'QLD', days: '2 days', pattern: 'Tue & Thu' }, NOW);
+    wfh.assess(store, r.id, PASS, NOW);
+    wfh.makeDecision(store, r.id, 'approved', 'Consistent comparator pathway', NOW);
+    expect(() => wfh.assess(store, r.id, PASS, NOW)).toThrow(GuardError);
+    expect(() => wfh.makeDecision(store, r.id, 'modified', 'Post-final change', NOW)).toThrow(GuardError);
+  });
 });
 
 describe('whs + outcomes services', () => {
   it('completes a due hazard review and records an outcome cycle review', () => {
-    const h = whs.review(store, 'HZ-024', '2026-12-20', NOW);
+    const h = whs.review(store, 'HZ-024', {
+      nextReviewDate: '2026-12-20',
+      finding: 'Higher-order controls remain effective',
+      reviewer: 'System WHS Reviewer',
+    }, NOW);
     expect(h.status).toBe('reviewed');
-    const c = outcomes.review(store, 'OC-2026-Q3-014', NOW);
+    const c = outcomes.review(store, 'OC-2026-Q3-014', {
+      reviewerName: 'System Manager',
+      summary: 'Delivery signals reviewed for cycle close.',
+      signedOff: true,
+    }, NOW);
     expect(c.status).toBe('reviewed');
+  });
+
+  it('supports hazard creation/update then enforces immutability after review', () => {
+    const created = whs.create(store, {
+      name: 'After-hours communications surge',
+      type: 'psychosocial',
+      jurisdiction: 'NSW',
+      controls: [{ tier: 'higher', text: 'Work allocation redesign', primary: true }],
+      consultation: 'Workers and HSR consulted.',
+      triggers: ['Scheduled — 2026-09-01'],
+      reviewDate: '2026-09-01',
+    }, NOW);
+    const updated = whs.update(store, created.id, { consultation: 'Consultation updated with additional worker feedback.' }, NOW);
+    expect(updated.consultation).toMatch(/additional worker feedback/i);
+    const reviewed = whs.review(store, created.id, {
+      nextReviewDate: '2026-12-01',
+      finding: 'Controls remain proportionate to risk.',
+      reviewer: 'System WHS Reviewer',
+    }, NOW);
+    expect(reviewed.reviews.length).toBe(1);
+    expect(() => whs.update(store, created.id, { reviewDate: '2027-01-01' }, NOW)).toThrow(GuardError);
+  });
+
+  it('supports contract creation/state sync then enforces immutability after cycle review', () => {
+    const created = outcomes.create(store, {
+      employee: 'Nora Kim',
+      jurisdiction: 'VIC',
+      period: 'Q4 2026',
+      signalSource: 'CRM',
+      outcomes: [
+        { text: 'Renew two enterprise accounts', state: 'progress' },
+        { text: 'Complete renewal playbook', state: 'notstarted' },
+      ],
+    }, NOW);
+    expect(created.status).toBe('review');
+    const synced = outcomes.updateOutcomes(store, created.id, [
+      { text: 'Renew two enterprise accounts', state: 'done' },
+      { text: 'Complete renewal playbook', state: 'progress' },
+    ], NOW);
+    expect(synced.status).toBe('ontrack');
+    const reviewed = outcomes.review(store, created.id, {
+      reviewerName: 'System Manager',
+      summary: 'Quarterly outcomes reviewed and acknowledged.',
+      signedOff: true,
+    }, NOW);
+    expect(reviewed.cycleReviews.length).toBe(1);
+    expect(() => outcomes.updateOutcomes(store, created.id, synced.outcomes, NOW)).toThrow(GuardError);
   });
 });

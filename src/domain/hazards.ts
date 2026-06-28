@@ -34,15 +34,30 @@ export function validateControls(hazard: Hazard): ControlValidation {
   return { valid: issues.length === 0, issues, warnings };
 }
 
-export function completeReview(hazard: Hazard, nextReviewDate: string, now: Date = new Date()): Hazard {
+export function completeReview(
+  hazard: Hazard,
+  nextReviewDate: string,
+  finding: string,
+  reviewer: string,
+  now: Date = new Date(),
+): Hazard {
   return {
     ...hazard,
     status: 'reviewed',
     reviewDate: nextReviewDate,
+    reviews: [
+      ...hazard.reviews,
+      {
+        at: now.toISOString(),
+        reviewer,
+        finding,
+        nextReviewDate,
+      },
+    ],
     audit: [
       ...hazard.audit,
-      stamp(now, 'Control review completed — controls confirmed effective'),
-      stamp(now, `Next review scheduled ${nextReviewDate}`),
+      stamp(now, `Control review completed — ${finding}`),
+      stamp(now, `Reviewed by ${reviewer}; next review scheduled ${nextReviewDate}`),
     ],
   };
 }
